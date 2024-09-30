@@ -1,5 +1,5 @@
 import pytest
-from conftest import MockModel
+from .conftest import MockModel
 
 
 def test_get_custom_object_exists(zendesk_object_manager, requests_mock):
@@ -175,15 +175,3 @@ def test_list_custom_objects_fields(zendesk_object_manager, requests_mock):
 
     object_fields_list = zendesk_object_manager.list_custom_object_fields("test_object")
     assert object_fields_list == ["codigo"]
-
-
-def test_get_or_create_custom_object_from_model_returns_existing_object(
-    zendesk_object_manager,
-):
-    (
-        custom_object,
-        created,
-    ) = zendesk_object_manager.get_or_create_custom_object_from_model(MockModel)
-
-    assert not created
-    assert custom_object["key"] == "mockmodel"

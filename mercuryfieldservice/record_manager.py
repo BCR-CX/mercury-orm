@@ -38,7 +38,7 @@ class RecordManager:
                 response = ZendeskAPIClient().get(
                     f"/custom_objects/{self.model.__name__.lower()}/records/{record_id}"
                 )
-            except requests.exceptions.HTTPError as e:
+            except requests.exceptions.HTTPError as e:  # pylint: disable=invalid-name
                 if e.response.status_code == 400:
                     error_response = e.response.json()
                     raise BadRequestError(

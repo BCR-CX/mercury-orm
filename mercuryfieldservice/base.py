@@ -26,7 +26,7 @@ class CustomObject:
         cls.objects = RecordManager(cls)
 
     def __init__(self, **kwargs):
-        self.id = None
+        self.id = None  # pylint: disable=invalid-name
         for field_name, field in self.__class__.__dict__.items():
             if isinstance(field, fields.Field):
                 setattr(self, field_name, kwargs.get(field_name))

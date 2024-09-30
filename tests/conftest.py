@@ -11,7 +11,7 @@ from mercuryfieldservice import fields
 def zendesk_client(monkeypatch):
     with patch.object(ZendeskAPIClient, "__init__", return_value=None):
         client = ZendeskAPIClient()
-        client.base_url = "https://mocked-subdomain.zendesk.com/api/v2"
+        client.base_url = "https://mockdomain.zendesk.com/api/v2"
         client.auth = None
         client.headers = {"Content-Type": "application/json"}
         yield client
@@ -21,7 +21,7 @@ def zendesk_client(monkeypatch):
 def zendesk_object_manager():
     with patch.object(ZendeskAPIClient, "__init__", return_value=None):
         manager = ZendeskObjectManager()
-        manager.client.base_url = "https://mocked-subdomain.zendesk.com/api/v2"
+        manager.client.base_url = "https://mockdomain.zendesk.com/api/v2"
         manager.client.headers = {"Content-Type": "application/json"}
         manager.client.auth = None
         yield manager
