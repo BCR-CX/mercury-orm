@@ -17,7 +17,7 @@ class ZendeskAPIClient:
     A client to interact with the Zendesk API, supporting basic CRUD operations.
     """
 
-    def __init__(self, email=os.getenv("ZENDESK_EMAIL")):
+    def __init__(self, email=os.getenv("ZENDESK_EMAIL", "mock@mock.com")):
         """
         Initializes the ZendeskAPIClient with authentication details.
 
@@ -26,8 +26,10 @@ class ZendeskAPIClient:
             (default: from environment variable).
         """
         self.email = email
-        self.api_token = os.getenv("ZENDESK_API_TOKEN")
-        self.base_url = f"https://{os.getenv('ZENDESK_SUBDOMAIN')}.zendesk.com/api/v2"
+        self.api_token = os.getenv("ZENDESK_API_TOKEN", "mock_token")
+        self.base_url = (
+            f"https://{os.getenv('ZENDESK_SUBDOMAIN', 'mockdomain')}.zendesk.com/api/v2"
+        )
         self.headers = {"Content-Type": "application/json"}
         self.auth = HTTPBasicAuth(f"{self.email}/token", self.api_token)
 

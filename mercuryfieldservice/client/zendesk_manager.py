@@ -193,15 +193,28 @@ class ZendeskObjectManager:
             description=f"Custom Object for {model.__name__}",
         )
 
+        existing_fields = self.list_custom_object_fields(custom_object_key)
+
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
-                field_type = field.__class__.__name__.lower()
-                self.create_custom_object_field(
-                    custom_object_key=custom_object_key,
-                    field_type=field_type,
-                    key=field.name,
-                    title=field_name.capitalize(),
-                )
+                field_key = field.name.lower()
+                if field_key not in existing_fields and field_key != "name":
+                    field_type = field.__class__.__name__.lower()
+                    if field_type.endswith("field"):
+                        field_type = field_type.replace("field", "")
+                    choices = getattr(field, "choices", None)
+                    self.create_custom_object_field(
+                        custom_object_key=custom_object_key,
+                        field_type=field_type,
+                        key=field_key,
+                        title=field_name.capitalize(),
+                        choices=choices,
+                    )
+                    logging.info(
+                        "Field '%s' created for Custom Object '%s'.",
+                        field_key,
+                        custom_object_key,
+                    )
 
     def get_or_create_custom_object_from_model(self, model):
         """

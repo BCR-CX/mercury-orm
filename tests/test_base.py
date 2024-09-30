@@ -1,23 +1,4 @@
-import pytest
-import requests
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-from mercuryfieldservice import fields
-from mercuryfieldservice.base import CustomObject
-
-
-class MockCustomObject(CustomObject):
-    name = fields.TextField("name")
-    codigo = fields.TextField("codigo")
-    ativo = fields.CheckboxField("ativo")
-
-
-@pytest.fixture
-def custom_object():
-    return MockCustomObject(name="Test Object", codigo="1234", ativo=True)
-
-
 def test_custom_object_creation(custom_object):
-    # Testa a criação de um objeto CustomObject
     assert custom_object.name == "Test Object"
     assert custom_object.codigo == "1234"
     assert custom_object.ativo is True
@@ -37,6 +18,7 @@ def test_custom_object_to_dict(custom_object):
         "name": "Test Object",
         "codigo": "1234",
         "ativo": True,
+        "id": None
         # "id": None,
         # "created_at": None,
         # "updated_at": None,
@@ -47,7 +29,7 @@ def test_custom_object_to_dict(custom_object):
     assert result == expected_dict
 
 
-def test_custom_object_save_create(requests_mock, custom_object):
+def test_custom_object_save_create(zendesk_client, requests_mock, custom_object):
     url = f"/custom_objects/{custom_object.__class__.__name__.lower()}/records"
     mock_response = {
         "custom_object_record": {
@@ -56,14 +38,14 @@ def test_custom_object_save_create(requests_mock, custom_object):
             "custom_object_fields": {"codigo": "1234", "ativo": True},
         }
     }
-    requests_mock.post(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.post(f"{zendesk_client.base_url}{url}", json=mock_response)
 
     response = custom_object.save()
     assert custom_object.id == "1"
     assert response["custom_object_record"]["id"] == "1"
 
 
-def test_custom_object_save_update(requests_mock, custom_object):
+def test_custom_object_save_update(zendesk_client, requests_mock, custom_object):
     custom_object.id = "1"
     url = f"/custom_objects/{custom_object.__class__.__name__.lower()}/records/{custom_object.id}"
     mock_response = {
@@ -73,7 +55,7 @@ def test_custom_object_save_update(requests_mock, custom_object):
             "custom_object_fields": {"codigo": "1234", "ativo": False},
         }
     }
-    requests_mock.patch(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.patch(f"{zendesk_client.base_url}{url}", json=mock_response)
 
     custom_object.name = "Updated Object"
     custom_object.ativo = False
@@ -83,12 +65,12 @@ def test_custom_object_save_update(requests_mock, custom_object):
     assert response["custom_object_record"]["name"] == "Updated Object"
 
 
-def test_custom_object_delete(requests_mock, custom_object):
+def test_custom_object_delete(requests_mock, custom_object, zendesk_client):
     custom_object.id = "1"
     url = (
         f"/custom_objects/{custom_object.__class__.__name__}/records/{custom_object.id}"
     )
-    requests_mock.delete(f"{ZendeskAPIClient().base_url}{url}", status_code=204)
+    requests_mock.delete(f"{zendesk_client.base_url}{url}", status_code=204)
 
     response_status = custom_object.delete()
     assert response_status == 204

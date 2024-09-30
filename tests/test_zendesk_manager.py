@@ -1,12 +1,5 @@
 import pytest
-import requests
-from mercuryfieldservice.client.zendesk_manager import ZendeskObjectManager
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-
-
-@pytest.fixture
-def zendesk_object_manager():
-    return ZendeskObjectManager(email="test_email@example.com")
+from conftest import MockModel
 
 
 def test_get_custom_object_exists(zendesk_object_manager, requests_mock):
@@ -123,6 +116,24 @@ def test_create_custom_object_field_with_name(zendesk_object_manager, requests_m
     assert field == expected
 
 
+def test_create_custom_object_field_with_invalid_field(
+    zendesk_object_manager, requests_mock
+):
+    url = f"{zendesk_object_manager.client.base_url}/custom_objects/test_object/fields"
+    mock_response = {
+        "custom_object_field": {"type": "text", "key": "codigo", "title": "Field Title"}
+    }
+    requests_mock.post(url, json=mock_response)
+
+    with pytest.raises(Exception) as e_info:
+        field = zendesk_object_manager.create_custom_object_field(
+            custom_object_key="test_object",
+            field_type="json",
+            key="codigo",
+            title="Field Title",
+        )
+
+
 def test_create_custom_object_record(zendesk_object_manager, requests_mock):
     # Mock the POST request for creating a custom object record
     url = f"{zendesk_object_manager.client.base_url}/custom_objects/test_object/records"
@@ -158,10 +169,21 @@ def test_list_custom_objects(zendesk_object_manager, requests_mock):
 
 
 def test_list_custom_objects_fields(zendesk_object_manager, requests_mock):
-    # Mock the GET request for listing custom objects
     url = f"{zendesk_object_manager.client.base_url}/custom_objects/test_object/fields"
     mock_response = {"custom_object_fields": [{"key": "codigo"}]}
     requests_mock.get(url, json=mock_response)
 
     object_fields_list = zendesk_object_manager.list_custom_object_fields("test_object")
     assert object_fields_list == ["codigo"]
+
+
+def test_get_or_create_custom_object_from_model_returns_existing_object(
+    zendesk_object_manager,
+):
+    (
+        custom_object,
+        created,
+    ) = zendesk_object_manager.get_or_create_custom_object_from_model(MockModel)
+
+    assert not created
+    assert custom_object["key"] == "mockmodel"

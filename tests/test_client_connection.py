@@ -1,11 +1,5 @@
 import pytest
 import requests
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-
-
-@pytest.fixture
-def zendesk_client():
-    return ZendeskAPIClient(email="test_email@example.com")
 
 
 def test_get_request_success(zendesk_client, requests_mock):
