@@ -1,0 +1,33 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md,markdown"]
+-   repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+    -   id: black
+
+-   repo: https://github.com/pycqa/flake8
+    rev: '5.0.4'
+    hooks:
+    -   id: flake8
+        args: [--max-line-length=120, --ignore=E203 W503]
+
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: bash -c 'cd mercuryfieldservice && pylint ./'
+      language: system
+      types: [python]
+      args:
+        [
+          "-rn", # Only display messages
+          "-sn", # Don't display the score
+          "--rcfile=.pylintrc", # Link to your config file
+          "--load-plugins=pylint.extensions.docparams", # Load an extension
+        ]
