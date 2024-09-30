@@ -99,5 +99,6 @@ You can retrieve all records or filter them based on certain criteria.
 ```
 all_produtos = Produto.objects.all()
 filtered_produtos = Produto.objects.filter(ativo=True)
+last_object = Produto.objects.last()
 ```
 
