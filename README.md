@@ -1,6 +1,4 @@
-# mercury-field-service
-
-# Mercury Field Service
+# Mercury Field Service (ORM Zendesk CustomObjects)
 
 Mercury Field Service is a Python ORM (Object-Relational Mapping) designed to integrate seamlessly with the Zendesk Custom Objects API. It provides a Django-like interface for defining, managing, and interacting with Zendesk custom objects and records, simplifying the communication with Zendesk's API.
 
