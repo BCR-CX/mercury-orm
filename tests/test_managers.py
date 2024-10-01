@@ -1,7 +1,7 @@
 import pytest
 import requests
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-from mercuryfieldservice.managers import QuerySet
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.managers import QuerySet
 
 
 class MockModel:

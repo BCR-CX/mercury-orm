@@ -41,7 +41,7 @@ class Product(CustomObject):
 Once you define the custom object class, you can create it in Zendesk using ZendeskObjectManager. This will automatically create the custom object and its fields in Zendesk.
 
 ```
-from mercuryfieldservice.client.zendesk_manager import ZendeskObjectManager
+from mercuryorm.client.zendesk_manager import ZendeskObjectManager
 
 # Create the custom object and fields in Zendesk
 manager = ZendeskObjectManager(email="your-email@example.com")

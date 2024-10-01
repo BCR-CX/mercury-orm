@@ -4,6 +4,7 @@ handling requests to the Zendesk API.
 """
 
 import os
+import json
 import requests
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv  # pylint: disable=import-error
@@ -56,7 +57,13 @@ class ZendeskAPIClient:
             timeout=timeout,
         )
         response.raise_for_status()
-        return response.json()
+        try:
+            return response.json()
+        except json.JSONDecodeError as json_error:
+            return {
+                "error": {"title": response.text, "message": str(json_error)},
+                "status_code": response.status_code,
+            }
 
     def post(self, endpoint, data, timeout=10):
         """
@@ -80,8 +87,16 @@ class ZendeskAPIClient:
             auth=self.auth,
             timeout=timeout,
         )
-        response.raise_for_status()
-        return response.json()
+        try:
+            data = response.json()
+            if not response.ok:
+                data.update({"status_code": response.status_code})
+            return data
+        except json.JSONDecodeError as json_error:
+            return {
+                "error": {"title": response.text, "message": str(json_error)},
+                "status_code": response.status_code,
+            }
 
     def patch(self, endpoint, data, timeout=10):
         """
@@ -105,8 +120,16 @@ class ZendeskAPIClient:
             auth=self.auth,
             timeout=timeout,
         )
-        response.raise_for_status()
-        return response.json()
+        try:
+            data = response.json()
+            if not response.ok:
+                data.update({"status_code": response.status_code})
+            return data
+        except json.JSONDecodeError as json_error:
+            return {
+                "error": {"title": response.text, "message": str(json_error)},
+                "status_code": response.status_code,
+            }
 
     def put(self, endpoint, data, timeout=10):
         """
@@ -130,8 +153,16 @@ class ZendeskAPIClient:
             auth=self.auth,
             timeout=timeout,
         )
-        response.raise_for_status()
-        return response.json()
+        try:
+            data = response.json()
+            if not response.ok:
+                data.update({"status_code": response.status_code})
+            return data
+        except json.JSONDecodeError as json_error:
+            return {
+                "error": {"title": response.text, "message": str(json_error)},
+                "status_code": response.status_code,
+            }
 
     def delete(self, endpoint, timeout=10):
         """
@@ -153,5 +184,16 @@ class ZendeskAPIClient:
             auth=self.auth,
             timeout=timeout,
         )
-        response.raise_for_status()
-        return response.status_code
+        if response.status_code == 204:
+            return {"status_code": 204}
+        try:
+            data = response.json()
+            print(data)
+            if not response.ok:
+                data.update({"status_code": response.status_code})
+            return data
+        except json.JSONDecodeError as json_error:
+            return {
+                "error": {"title": response.text, "message": str(json_error)},
+                "status_code": response.status_code,
+            }

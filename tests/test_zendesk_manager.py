@@ -116,6 +116,29 @@ def test_create_custom_object_field_with_name(zendesk_object_manager, requests_m
     assert field == expected
 
 
+def test_create_custom_object_field_with_external_id(
+    zendesk_object_manager, requests_mock
+):
+    url = f"{zendesk_object_manager.client.base_url}/custom_objects/test_object/fields"
+    mock_response = {
+        "custom_object_field": {
+            "type": "text",
+            "key": "external_id",
+            "title": "Field Title",
+        }
+    }
+    requests_mock.post(url, json=mock_response)
+
+    field = zendesk_object_manager.create_custom_object_field(
+        custom_object_key="test_object",
+        field_type="text",
+        key="external_id",
+        title="Field Title",
+    )
+    expected = {"message": "Field 'external_id' is not allowed to be created"}
+    assert field == expected
+
+
 def test_create_custom_object_field_with_invalid_field(
     zendesk_object_manager, requests_mock
 ):

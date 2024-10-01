@@ -1,24 +1,6 @@
 import pytest
-import requests
-from mercuryfieldservice.client.zendesk_manager import ZendeskAPIClient
-from mercuryfieldservice.record_manager import RecordManager
-from mercuryfieldservice.exceptions import BadRequestError, NotFoundError
-from mercuryfieldservice.managers import QuerySet
-
-
-class MockModel:
-    __name__ = "MockModel"
-
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    def save(self):
-        return {"id": "123", "custom_object_fields": self.__dict__}
-
-
-@pytest.fixture
-def record_manager():
-    return RecordManager(model=MockModel)
+from mercuryorm.zendesk_manager import ZendeskAPIClient
+from mercuryorm.exceptions import BadRequestError, NotFoundError
 
 
 def test_create_record(record_manager, requests_mock):
@@ -113,9 +95,8 @@ def test_delete_record(record_manager, requests_mock):
     requests_mock.delete(
         f"{ZendeskAPIClient().base_url}/custom_objects/{url}", status_code=204
     )
-
     response = record_manager.delete(record_id)
-    assert response == 204
+    assert response == {"status_code": 204}
 
 
 def test_no_records_found(record_manager, requests_mock):
@@ -143,3 +124,28 @@ def test_multiple_records_found(record_manager, requests_mock):
 
     with pytest.raises(ValueError):
         record_manager.get(name="Multiple Records")
+
+
+def test_get_all(record_manager, requests_mock):
+    url = f"{record_manager.model.__name__.lower()}/records"
+    mock_response = {
+        "custom_object_records": [
+            {"id": "1", "name": "Record 1"},
+            {"id": "2", "name": "Qualquer"},
+        ]
+    }
+    requests_mock.get(
+        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+    )
+    all = record_manager.all()
+    assert len(all) > 1
+
+
+def test_get_last_none(record_manager, requests_mock):
+    url = f"{record_manager.model.__name__.lower()}/records"
+    mock_response = {}
+    requests_mock.get(
+        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+    )
+    last = record_manager.last()
+    assert last == None

@@ -5,9 +5,10 @@ related to Zendesk custom objects and their fields.
 
 import os
 import logging
+from unidecode import unidecode
 from dotenv import load_dotenv  # pylint: disable=import-error
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-from mercuryfieldservice import fields
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm import fields
 
 
 load_dotenv()
@@ -19,7 +20,7 @@ class ZendeskObjectManager:
     fields, and records. Also provides methods to list existing objects and fields.
     """
 
-    def __init__(self, email=os.getenv("ZENDESK_EMAIL")):
+    def __init__(self, email=os.getenv("ZENDESK_EMAIL", "mock@mock.com")):
         """
         Initializes the ZendeskObjectManager with the given email for authentication.
         Args:
@@ -114,6 +115,8 @@ class ZendeskObjectManager:
         choices = kwargs.get("choices")
         if key == "name":
             return {"message": "Field 'name' is not allowed to be created"}
+        if key == "external_id":
+            return {"message": "Field 'external_id' is not allowed to be created"}
         valid_field_types = [
             "text",
             "textarea",
@@ -143,7 +146,7 @@ class ZendeskObjectManager:
                 {
                     "name": choice,
                     "raw_name": choice,
-                    "value": choice.lower().replace(" ", "_"),
+                    "value": unidecode(choice).lower().replace(" ", "_"),
                 }
                 for choice in choices
             ]

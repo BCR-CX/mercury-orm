@@ -2,7 +2,7 @@
 For Manager and querysets to Records CustomObject
 """
 
-from mercuryfieldservice.client.connection import ZendeskAPIClient
+from mercuryorm.client.connection import ZendeskAPIClient
 
 
 class QuerySet:
@@ -13,12 +13,13 @@ class QuerySet:
     def __init__(self, model):
         self.model = model
         self.base_url = f"/custom_objects/{self.model.__name__.lower()}/records"
+        self.client = ZendeskAPIClient()
 
     def all(self):
         """
         Returns all records from the Custom Object without metadata or links.
         """
-        response = ZendeskAPIClient().get(self.base_url)
+        response = self.client.get(self.base_url)
         records = self._parse_response(response)
         return records
 
@@ -32,7 +33,7 @@ class QuerySet:
         if before_cursor:
             params["page[before]"] = before_cursor
 
-        response = ZendeskAPIClient().get(self.base_url, params=params)
+        response = self.client.get(self.base_url, params=params)
         return (
             self._parse_response(response),
             response.get("meta", {}),

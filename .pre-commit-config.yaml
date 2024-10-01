@@ -21,7 +21,7 @@ repos:
   hooks:
     - id: pylint
       name: pylint
-      entry: bash -c 'cd mercuryfieldservice && pylint ./'
+      entry: bash -c 'cd mercuryorm && pylint ./'
       language: system
       types: [python]
       args:

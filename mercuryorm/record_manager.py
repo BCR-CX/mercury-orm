@@ -4,9 +4,9 @@ with the Zendesk API, including creating, retrieving, and deleting records.
 """
 
 import requests
-from mercuryfieldservice.managers import QuerySet
-from mercuryfieldservice.client.zendesk_manager import ZendeskAPIClient
-from mercuryfieldservice.exceptions import BadRequestError, NotFoundError
+from mercuryorm.managers import QuerySet
+from mercuryorm.zendesk_manager import ZendeskAPIClient
+from mercuryorm.exceptions import BadRequestError, NotFoundError
 
 
 class RecordManager:
@@ -18,6 +18,7 @@ class RecordManager:
     def __init__(self, model):
         self.model = model
         self.queryset = QuerySet(model)
+        self.client = ZendeskAPIClient()
 
     def create(self, **kwargs):
         """
@@ -35,7 +36,7 @@ class RecordManager:
         if "id" in kwargs:
             record_id = kwargs.pop("id")
             try:
-                response = ZendeskAPIClient().get(
+                response = self.client.get(
                     f"/custom_objects/{self.model.__name__.lower()}/records/{record_id}"
                 )
             except requests.exceptions.HTTPError as e:  # pylint: disable=invalid-name
@@ -76,7 +77,7 @@ class RecordManager:
         """
         Deletes a record by ID.
         """
-        return ZendeskAPIClient().delete(
+        return self.client.delete(
             f"/custom_objects/{self.model.__name__.lower()}/records/{record_id}"
         )
 
@@ -87,7 +88,7 @@ class RecordManager:
         """
         params = {"sort": "-updated_at", "page[size]": 1}
 
-        response = ZendeskAPIClient().get(
+        response = self.client.get(
             f"/custom_objects/{self.model.__name__.lower()}/records", params=params
         )
 
