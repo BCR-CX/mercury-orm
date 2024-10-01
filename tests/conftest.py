@@ -1,10 +1,10 @@
 import pytest
 import requests_mock
 from unittest.mock import patch
-from mercuryfieldservice.client.zendesk_manager import ZendeskObjectManager
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-from mercuryfieldservice.record_manager import RecordManager
-from mercuryfieldservice import fields
+from mercuryorm.zendesk_manager import ZendeskObjectManager
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.record_manager import RecordManager
+from mercuryorm import fields
 
 
 @pytest.fixture
@@ -73,6 +73,12 @@ class MockModel:
     name = fields.TextField("name")
     codigo = fields.TextField("codigo")
     ativo = fields.CheckboxField("ativo")
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def save(self):
+        return {"id": "123", "custom_object_fields": self.__dict__}
 
 
 @pytest.fixture

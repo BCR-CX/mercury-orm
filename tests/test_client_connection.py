@@ -33,11 +33,17 @@ def test_post_request_success(zendesk_client, requests_mock):
 def test_post_request_failure(zendesk_client, requests_mock):
     # Mock a failed POST request to the Zendesk API
     url = f"{zendesk_client.base_url}/test_endpoint"
-    requests_mock.post(url, status_code=400)
+    requests_mock.post(url, text="Bad Request", status_code=400)
 
     data = {"name": "Test"}
-    with pytest.raises(requests.exceptions.HTTPError):
-        zendesk_client.post("/test_endpoint", data)
+    response = zendesk_client.post("/test_endpoint", data)
+    assert response == {
+        "error": {
+            "title": "Bad Request",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+        },
+        "status_code": 400,
+    }
 
 
 def test_patch_request_success(zendesk_client, requests_mock):
@@ -53,11 +59,17 @@ def test_patch_request_success(zendesk_client, requests_mock):
 def test_patch_request_failure(zendesk_client, requests_mock):
     # Mock a failed PATCH request to the Zendesk API
     url = f"{zendesk_client.base_url}/test_endpoint"
-    requests_mock.patch(url, status_code=400)
+    requests_mock.patch(url, text="Bad Request", status_code=400)
 
     data = {"name": "Updated"}
-    with pytest.raises(requests.exceptions.HTTPError):
-        zendesk_client.patch("/test_endpoint", data)
+    response = zendesk_client.patch("/test_endpoint", data)
+    assert response == {
+        "error": {
+            "title": "Bad Request",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+        },
+        "status_code": 400,
+    }
 
 
 def test_put_request_success(zendesk_client, requests_mock):
@@ -73,11 +85,17 @@ def test_put_request_success(zendesk_client, requests_mock):
 def test_put_request_failure(zendesk_client, requests_mock):
     # Mock a failed PUT request to the Zendesk API
     url = f"{zendesk_client.base_url}/test_endpoint"
-    requests_mock.put(url, status_code=400)
+    requests_mock.put(url, text="Bad Request", status_code=400)
 
     data = {"name": "Updated"}
-    with pytest.raises(requests.exceptions.HTTPError):
-        zendesk_client.put("/test_endpoint", data)
+    response = zendesk_client.put("/test_endpoint", data)
+    assert response == {
+        "error": {
+            "title": "Bad Request",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+        },
+        "status_code": 400,
+    }
 
 
 def test_delete_request_success(zendesk_client, requests_mock):
@@ -86,13 +104,19 @@ def test_delete_request_success(zendesk_client, requests_mock):
     requests_mock.delete(url, status_code=204)
 
     response = zendesk_client.delete("/test_endpoint")
-    assert response == 204
+    assert response == {"status_code": 204}
 
 
 def test_delete_request_failure(zendesk_client, requests_mock):
     # Mock a failed DELETE request to the Zendesk API
     url = f"{zendesk_client.base_url}/test_endpoint"
-    requests_mock.delete(url, status_code=404)
+    requests_mock.delete(url, text="Not Found", status_code=404)
 
-    with pytest.raises(requests.exceptions.HTTPError):
-        zendesk_client.delete("/test_endpoint")
+    response = zendesk_client.delete("/test_endpoint")
+    assert response == {
+        "error": {
+            "title": "Not Found",
+            "message": "Expecting value: line 1 column 1 (char 0)",
+        },
+        "status_code": 404,
+    }

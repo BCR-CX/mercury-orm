@@ -1,6 +1,6 @@
-# Mercury Field Service (ORM Zendesk CustomObjects)
+# Mercury (ORM Zendesk CustomObjects)
 
-Mercury Field Service is a Python ORM (Object-Relational Mapping) designed to integrate seamlessly with the Zendesk Custom Objects API. It provides a Django-like interface for defining, managing, and interacting with Zendesk custom objects and records, simplifying the communication with Zendesk's API.
+Mercury is a Python ORM (Object-Relational Mapping) designed to integrate seamlessly with the Zendesk Custom Objects API. It provides a Django-like interface for defining, managing, and interacting with Zendesk custom objects and records, simplifying the communication with Zendesk's API.
 
 ## Key Features
 
@@ -13,7 +13,7 @@ Mercury Field Service is a Python ORM (Object-Relational Mapping) designed to in
 ## Installation
 
 ```bash
-pip install mercury-field-service
+pip install mercury-orm
 # add variables in .env or:
 export ZENDESK_SUBDOMAIN=<your_zendesk_subdomain>.
 export ZENDESK_API_TOKEN=<your_zendesk_api_token>.
@@ -22,19 +22,18 @@ export ZENDESK_EMAIL=<your_zendesk_email>.
 
 ## CRUD Operations with Records
 
-Mercury Field Service ORM provides simple methods for performing CRUD (Create, Read, Update, Delete) operations on Zendesk custom object records. Below are examples of how to manage records in your custom objects.
+Mercury ORM provides simple methods for performing CRUD (Create, Read, Update, Delete) operations on Zendesk custom object records. Below are examples of how to manage records in your custom objects.
 
 
 ### Creating a CustomObjects
 ```
-class Produto(CustomObject):
+class Product(CustomObject):
     name = fields.TextField("name")
-    referencia = fields.TextField("referencia")
+    code = fields.TextField("code")
     descricao = fields.TextareaField("descricao")
-    garantia = fields.IntegerField("garantia")
-    preco = fields.DecimalField("preco")
-    ativo = fields.CheckboxField("ativo")
-    voltagem = fields.DropdownField("voltagem", choices=["220", "110", "Bivolt"])
+    price = fields.DecimalField("price")
+    active = fields.CheckboxField("active")
+    voltage = fields.DropdownField("voltage", choices=["220", "110", "Bivolt"])
 ```
 
 ### Creating a Custom Object and Fields in Zendesk
@@ -42,61 +41,60 @@ class Produto(CustomObject):
 Once you define the custom object class, you can create it in Zendesk using ZendeskObjectManager. This will automatically create the custom object and its fields in Zendesk.
 
 ```
-from mercuryfieldservice.client.zendesk_manager import ZendeskObjectManager
+from mercuryorm.client.zendesk_manager import ZendeskObjectManager
 
 # Create the custom object and fields in Zendesk
 manager = ZendeskObjectManager(email="your-email@example.com")
-manager.create_custom_object_from_model(Produto)
+manager.create_custom_object_from_model(Product)
 # or
-manager.get_or_create_custom_object_from_model(Produto)
+manager.get_or_create_custom_object_from_model(Product)
 ```
 ### Record Manager
 
 Each custom object class is automatically assigned a RecordManager that handles interaction with the Zendesk API. The RecordManager allows you to:
 
-- Create records: ```Produto.objects.create(**kwargs)```
-- Get a single record: ```Produto.objects.get(id=1)```
-- Filter records: ```Produto.objects.filter(ativo=True)```
-- Delete records: ```Produto.objects.delete(id=1)```
-- Retrieve all records: ```Produto.objects.all()```
-  
+- Create records: ```Product.objects.create(**kwargs)```
+- Get a single record: ```Product.objects.get(id=1)```
+- Filter records: ```Product.objects.filter(active=True)```
+- Delete records: ```Product.objects.delete(id=1)```
+- Retrieve all records: ```Product.objects.all()```
+
 ### Creating a Record
 
 You can create a new record by instantiating your custom object and calling the `save()` method:
 
 ```python
-produto = Produto(name="Sample Product", referencia="12345", preco=99.99, ativo=True)
-produto.save()
+product = Product(name="Sample Product", code="12345", price=99.99, active=True)
+product.save()
 
 #or
-Produto.objects.create(name="Sample Product", referencia="12345", preco=99.99, ativo=True)
+Product.objects.create(name="Sample Product", code="12345", price=99.99, active=True)
 ```
 ### Retrieving a Record
 
 You can retrieve an individual record by using the get() method:
 ```
-retrieved_produto = Produto.objects.get(id=produto.id)
+retrieved_product = Product.objects.get(id=product.id)
 ```
 ### Updating a Record
 
 To update a record, modify its attributes and call the save() method again:
 ```
-retrieved_produto.preco = 89.99
-retrieved_produto.save()
+retrieved_product.price = 89.99
+retrieved_product.save()
 ```
 
 ### Deleting a Record
 
 To delete a record from Zendesk, call the delete() method on the object:
 ```
-retrieved_produto.delete()
+retrieved_product.delete()
 ```
 ## Querying and Filtering Records
 
 You can retrieve all records or filter them based on certain criteria.
 ```
-all_produtos = Produto.objects.all()
-filtered_produtos = Produto.objects.filter(ativo=True)
-last_object = Produto.objects.last()
+all_products = Product.objects.all()
+filtered_products = Product.objects.filter(active=True)
+last_object = Product.objects.last()
 ```
-

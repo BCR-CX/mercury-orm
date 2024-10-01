@@ -3,9 +3,9 @@ Module for handling CustomObject base functionality, including saving, deleting,
 and managing fields for integration with Zendesk API.
 """
 
-from mercuryfieldservice.client.connection import ZendeskAPIClient
-from mercuryfieldservice import fields
-from mercuryfieldservice.record_manager import RecordManager
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm import fields
+from mercuryorm.record_manager import RecordManager
 
 
 class CustomObject:
@@ -26,6 +26,7 @@ class CustomObject:
         cls.objects = RecordManager(cls)
 
     def __init__(self, **kwargs):
+        self.client = ZendeskAPIClient()
         self.id = None  # pylint: disable=invalid-name
         for field_name, field in self.__class__.__dict__.items():
             if isinstance(field, fields.Field):
@@ -48,16 +49,17 @@ class CustomObject:
             "custom_object_record": {
                 "custom_object_fields": self.to_dict(),
                 "name": getattr(self, "name", "Unnamed Object"),
+                "external_id": getattr(self, "external_id", None),
             }
         }
 
         if not hasattr(self, "id") or not self.id:
-            response = ZendeskAPIClient().post(
+            response = self.client.post(
                 f"/custom_objects/{self.__class__.__name__.lower()}/records", data
             )
             self.id = response["custom_object_record"]["id"]
             return response
-        return ZendeskAPIClient().patch(
+        return self.client.patch(
             f"/custom_objects/{self.__class__.__name__.lower()}/records/{self.id}", data
         )
 
@@ -65,7 +67,7 @@ class CustomObject:
         """
         Deletes the current object from Zendesk using its ID.
         """
-        return ZendeskAPIClient().delete(
+        return self.client.delete(
             f"/custom_objects/{self.__class__.__name__}/records/{self.id}"
         )
 
@@ -85,7 +87,6 @@ class CustomObject:
             "created_by_user_id": getattr(self, "created_by_user_id", None),
             "updated_by_user_id": getattr(self, "updated_by_user_id", None),
             "external_id": getattr(self, "external_id", None),
-            "codigo": getattr(self, "codigo", None),
         }
 
         custom_fields = {
