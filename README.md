@@ -30,7 +30,7 @@ Mercury ORM provides simple methods for performing CRUD (Create, Read, Update, D
 class Product(CustomObject):
     name = fields.TextField("name")
     code = fields.TextField("code")
-    descricao = fields.TextareaField("descricao")
+    description = fields.TextareaField("description")
     price = fields.DecimalField("price")
     active = fields.CheckboxField("active")
     voltage = fields.DropdownField("voltage", choices=["220", "110", "Bivolt"])
