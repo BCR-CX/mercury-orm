@@ -48,7 +48,7 @@ class CustomObject:
         data = {
             "custom_object_record": {
                 "custom_object_fields": self.to_dict(),
-                "name": getattr(self, "name", "Unnamed Object"),
+                "name": getattr(self, "name") or "Unnamed Object",
                 "external_id": getattr(self, "external_id", None),
             }
         }
