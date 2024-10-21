@@ -98,3 +98,17 @@ class RecordManager:
             )
             return record
         return None
+
+    def search(self, word):
+        """
+        Returns the object with a word.
+        """
+        results = []
+        response = self.client.get(
+            f"/custom_objects/{self.model.__name__.lower()}/records/search?query={word}&sort="
+        )
+        if response.get("custom_object_records"):
+            records = response.get("custom_object_records", [])
+            for record in records:
+                results.append(self.queryset.parse_record_fields(record))
+        return results
