@@ -17,15 +17,42 @@ class QuerySet:
 
     def all(self):
         """
-        Returns all records from the Custom Object without metadata or links.
+        Returns all records from the Custom Object, handling pagination automatically.
         """
-        response = self.client.get(self.base_url)
-        records = self._parse_response(response)
+        records = []
+        next_cursor = None
+
+        while True:
+            params = {"page[size]": 100}
+            if next_cursor:
+                params["page[after]"] = next_cursor
+
+            response = self.client.get(self.base_url, params=params)
+
+            if "error" in response:
+                raise ValueError(
+                    f"Error from Zendesk API: {response['error']} - {response.get('description')}"
+                )
+
+            records.extend(self._parse_response(response))
+
+            links = response.get("links", {})
+            next_cursor_url = links.get("next")
+
+            if not next_cursor_url:
+                break
+
+            # Extract value from 'page[after]' of URL 'next'
+            # Example "next_cursor_url": "/custom_objects/myobject/records?page[after]=xyz"
+            from urllib.parse import parse_qs, urlparse
+
+            parsed_url = urlparse(next_cursor_url)
+            next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
         return records
 
     def all_with_pagination(self, page_size=100, after_cursor=None, before_cursor=None):
         """
-        Returns all records that support pagination, including metadata and links.
+        Returns a paginated response including metadata and links.
         """
         params = {"page[size]": page_size}
         if after_cursor:
@@ -34,11 +61,48 @@ class QuerySet:
             params["page[before]"] = before_cursor
 
         response = self.client.get(self.base_url, params=params)
-        return (
-            self._parse_response(response),
-            response.get("meta", {}),
-            response.get("links", {}),
+
+        if "error" in response:
+            raise ValueError(
+                f"Error from Zendesk API: {response['error']} - {response.get('description')}"
+            )
+
+        return {
+            "count": self.count(),
+            "results": self._parse_response(response),
+            "meta": response.get("meta", {}),
+            "links": response.get("links", {}),
+        }
+
+    def search_with_pagination(
+        self, word, page_size=100, after_cursor=None, before_cursor=None
+    ):
+        """
+        Returns paginated search results with a word.
+        """
+        params = {"query": word, "sort": "", "page[size]": page_size}
+        if after_cursor:
+            params["page[after]"] = after_cursor
+        if before_cursor:
+            params["page[before]"] = before_cursor
+
+        response = self.client.get(
+            f"/custom_objects/{self.model.__name__.lower()}/records/search",
+            params=params,
         )
+
+        results = []
+        if response.get("custom_object_records"):
+            records = response.get("custom_object_records", [])
+            for record in records:
+                results.append(self.queryset.parse_record_fields(record))
+
+        return {
+            "count": response.get("count", ""),
+            "results": results,
+            "meta": response.get("meta", {}),
+            "links": response.get("links", {}),
+        }
 
     def filter(self, **kwargs):
         """
@@ -59,6 +123,15 @@ class QuerySet:
                 filtered_records.append(record)
 
         return filtered_records
+
+    def count(self):
+        """
+        Deletes a record by ID.
+        """
+        response = self.client.get(
+            f"/custom_objects/{self.model.__name__.lower()}/records/count"
+        )
+        return response["count"]["value"]
 
     def _parse_response(self, response):
         """
