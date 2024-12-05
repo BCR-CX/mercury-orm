@@ -151,9 +151,16 @@ class ZendeskObjectManager:
                 for choice in choices
             ]
         if field_type == "lookup":
-            data["custom_object_field"][
-                "relationship_target_type"
-            ] = f"zen:custom_object:{key}"
+            is_custom_object = kwargs.get("is_custom_object")
+            related_object = kwargs.get("related_object")
+            if not is_custom_object:
+                data["custom_object_field"][
+                    "relationship_target_type"
+                ] = f"zen:{related_object}"
+            else:
+                data["custom_object_field"][
+                    "relationship_target_type"
+                ] = f"zen:custom_object:{related_object}"
 
         return self.client.post(endpoint, data)
 
@@ -206,12 +213,16 @@ class ZendeskObjectManager:
                     if field_type.endswith("field"):
                         field_type = field_type.replace("field", "")
                     choices = getattr(field, "choices", None)
+                    is_custom_object = getattr(field, "is_custom_object", None)
+                    related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
                         custom_object_key=custom_object_key,
                         field_type=field_type,
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
+                        is_custom_object=is_custom_object,
+                        related_object=related_object,
                     )
                     logging.info(
                         "Field '%s' created for Custom Object '%s'.",
@@ -246,12 +257,16 @@ class ZendeskObjectManager:
                     if field_type.endswith("field"):
                         field_type = field_type.replace("field", "")
                     choices = getattr(field, "choices", None)
+                    is_custom_object = getattr(field, "is_custom_object", None)
+                    related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
                         custom_object_key=custom_object_key,
                         field_type=field_type,
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
+                        is_custom_object=is_custom_object,
+                        related_object=related_object,
                     )
                     logging.info(
                         "Field '%s' created for Custom Object '%s'.",

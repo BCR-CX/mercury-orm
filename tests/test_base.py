@@ -18,7 +18,7 @@ def test_custom_object_to_dict(custom_object):
         "name": "Test Object",
         "codigo": "1234",
         "ativo": True,
-        "id": None
+        "id": None,
         # "id": None,
         # "created_at": None,
         # "updated_at": None,

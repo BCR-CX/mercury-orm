@@ -173,7 +173,7 @@ class LookupField(Field):  # pylint: disable=too-few-public-methods
     Inherits from Field and uses a related custom object.
     """
 
-    def __init__(self, name, related_object):
+    def __init__(self, name, related_object, is_custom_object=True):
         """
         Initializes a LookupField object.
 
@@ -183,6 +183,7 @@ class LookupField(Field):  # pylint: disable=too-few-public-methods
         """
         super().__init__(name, "lookup")
         self.related_object = related_object
+        self.is_custom_object = is_custom_object
 
     def to_dict(self, value):
         """

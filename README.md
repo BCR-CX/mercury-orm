@@ -44,7 +44,7 @@ Once you define the custom object class, you can create it in Zendesk using Zend
 from mercuryormc.zendesk_manager import ZendeskObjectManager
 
 # Create the custom object and fields in Zendesk
-manager = ZendeskObjectManager(email="your-email@example.com")
+manager = ZendeskObjectManager()
 manager.create_custom_object_from_model(Product)
 # or
 manager.get_or_create_custom_object_from_model(Product)
@@ -58,6 +58,7 @@ Each custom object class is automatically assigned a RecordManager that handles 
 - Filter records: ```Product.objects.filter(active=True)```
 - Delete records: ```Product.objects.delete(id=1)```
 - Retrieve all records: ```Product.objects.all()```
+- Search all records: ```Product.objects.search(word="something")```
 
 ### Creating a Record
 
