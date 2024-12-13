@@ -41,7 +41,12 @@ def test_all_records(queryset, requests_mock):
 
 
 def test_all_with_pagination(queryset, requests_mock):
+    base_url = ZendeskAPIClient().base_url
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
+    count_url = f"{base_url}{url}/count"
+
+    requests_mock.get(count_url, json={"count": {"value": 1}})
+
     mock_response = {
         "custom_object_records": [
             {
@@ -53,14 +58,19 @@ def test_all_with_pagination(queryset, requests_mock):
         "meta": {"page_size": 1},
         "links": {"next": "next_url"},
     }
-    requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.get(f"{base_url}{url}", json=mock_response)
 
-    records, meta, links = queryset.all_with_pagination(page_size=1)
+    response = queryset.all_with_pagination(page_size=1)
 
-    assert len(records) == 1
-    assert records[0].id == "1"
-    assert meta["page_size"] == 1
-    assert links["next"] == "next_url"
+    assert len(response["results"]) == 1
+    result = response["results"][0]
+    assert isinstance(result, MockModel)
+    assert result.id == "1"
+    assert result.name == "Record 1"
+    assert response["meta"]["page_size"] == 1
+    assert response["links"]["next"] == "next_url"
+
+
 
 
 def test_filter_records(queryset, requests_mock):
@@ -131,7 +141,12 @@ def test_parse_record_fields(queryset):
 
 
 def test_all_with_pagination_after_cursor(queryset, requests_mock):
+    base_url = ZendeskAPIClient().base_url
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
+    count_url = f"{base_url}{url}/count"
+
+    # Mock para o endpoint /count com a estrutura correta
+    requests_mock.get(count_url, json={"count": {"value": 1}})
     mock_response = {
         "custom_object_records": [
             {
@@ -145,11 +160,11 @@ def test_all_with_pagination_after_cursor(queryset, requests_mock):
     }
     requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
 
-    records, meta, links = queryset.all_with_pagination(
+    response = queryset.all_with_pagination(
         page_size=1, after_cursor="abc123"
     )
 
-    assert len(records) == 1
-    assert records[0].id == "3"
-    assert meta["page_size"] == 1
-    assert links["next"] == "next_url"
+    assert len(response["results"]) == 1
+    assert response["results"][0].id == "3"
+    assert response["meta"]["page_size"] == 1
+    assert response["links"]["next"] == "next_url"

@@ -67,6 +67,14 @@ class RecordManager:
         """
         return self.queryset.all()
 
+    def all_paginated(self, page_size=100, after_cursor=None, before_cursor=None):
+        """
+        Returns all records using QuerySet.
+        """
+        return self.queryset.all_with_pagination(
+            page_size=page_size, after_cursor=after_cursor, before_cursor=before_cursor
+        )
+
     def filter(self, **criteria):
         """
         Filters records based on the given criteria using QuerySet.
@@ -112,3 +120,32 @@ class RecordManager:
             for record in records:
                 results.append(self.queryset.parse_record_fields(record))
         return results
+
+    def search_paginated(
+        self, word, page_size=10, after_cursor=None, before_cursor=None
+    ):
+        """
+        Returns paginated search results with a word.
+        """
+        return self.queryset.search_with_pagination(
+            word=word,
+            page_size=page_size,
+            after_cursor=after_cursor,
+            before_cursor=before_cursor,
+        )
+    def find(self, filters):
+        """
+        Returns a list of records based on a filter.
+        """
+        return self.queryset.find(filters)
+
+    def find_paginated(self, filters, page_size=100, after_cursor=None, before_cursor=None):
+        """
+        Returns paginated search results with a filter.
+        """
+        return self.queryset.find_with_pagination(
+            filters=filters,
+            page_size=page_size,
+            after_cursor=after_cursor,
+            before_cursor=before_cursor,
+        )
