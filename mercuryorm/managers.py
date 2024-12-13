@@ -17,6 +17,14 @@ class QuerySet:
 
     def all(self):
         """
+        Returns the 100 first records from the Custom Object without metadata or links.
+        """
+        response = self.client.get(self.base_url)
+        records = self._parse_response(response)
+        return records
+
+    def all_of(self):
+        """
         Returns all records from the Custom Object, handling pagination automatically.
         """
         records = []
