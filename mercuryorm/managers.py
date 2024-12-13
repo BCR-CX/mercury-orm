@@ -51,8 +51,6 @@ class QuerySet:
             if not next_cursor_url:
                 break
 
-            # Extract value from 'page[after]' of URL 'next'
-            # Example "next_cursor_url": "/custom_objects/myobject/records?page[after]=xyz"
             parsed_url = urlparse(next_cursor_url)
             next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
         return records
