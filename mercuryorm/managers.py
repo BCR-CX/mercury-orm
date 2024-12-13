@@ -2,6 +2,7 @@
 For Manager and querysets to Records CustomObject
 """
 
+from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
 
 
@@ -49,10 +50,6 @@ class QuerySet:
 
             if not next_cursor_url:
                 break
-
-            # Extract value from 'page[after]' of URL 'next'
-            # Example "next_cursor_url": "/custom_objects/myobject/records?page[after]=xyz"
-            from urllib.parse import parse_qs, urlparse
 
             parsed_url = urlparse(next_cursor_url)
             next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
@@ -103,7 +100,7 @@ class QuerySet:
         if response.get("custom_object_records"):
             records = response.get("custom_object_records", [])
             for record in records:
-                results.append(self.queryset.parse_record_fields(record))
+                results.append(self.parse_record_fields(record))
 
         return {
             "count": response.get("count", ""),
