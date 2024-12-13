@@ -133,3 +133,19 @@ class RecordManager:
             after_cursor=after_cursor,
             before_cursor=before_cursor,
         )
+    def find(self, filters):
+        """
+        Returns a list of records based on a filter.
+        """
+        return self.queryset.find(filters)
+
+    def find_paginated(self, filters, page_size=100, after_cursor=None, before_cursor=None):
+        """
+        Returns paginated search results with a filter.
+        """
+        return self.queryset.find_with_pagination(
+            filters=filters,
+            page_size=page_size,
+            after_cursor=after_cursor,
+            before_cursor=before_cursor,
+        )

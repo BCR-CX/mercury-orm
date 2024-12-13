@@ -2,6 +2,7 @@
 For Manager and querysets to Records CustomObject
 """
 
+from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
 
 
@@ -52,8 +53,6 @@ class QuerySet:
 
             # Extract value from 'page[after]' of URL 'next'
             # Example "next_cursor_url": "/custom_objects/myobject/records?page[after]=xyz"
-            from urllib.parse import parse_qs, urlparse
-
             parsed_url = urlparse(next_cursor_url)
             next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
         return records
@@ -69,6 +68,67 @@ class QuerySet:
             params["page[before]"] = before_cursor
 
         response = self.client.get(self.base_url, params=params)
+
+        if "error" in response:
+            raise ValueError(
+                f"Error from Zendesk API: {response['error']} - {response.get('description')}"
+            )
+
+        return {
+            "count": self.count(),
+            "results": self._parse_response(response),
+            "meta": response.get("meta", {}),
+            "links": response.get("links", {}),
+        }
+    def find(self, filters):
+        """
+        Returns a list of records that match the specified filter.  
+        The filter is a dictionary and can take the following forms:  
+            - A single dictionary with a key (field_name) and a value
+            that is another dictionary containing an operator and a value.  
+            - Key(s) named `$and` or `$or`, where the value is a 
+            list of dictionaries. Each dictionary contains a key (field_name) and a value
+            that is another dictionary with an operator and a value.
+        """
+        records = []
+        next_cursor = None
+
+        while True:
+            params = {"page[size]": 100}
+            if next_cursor:
+                params["page[after]"] = next_cursor
+
+            response = self.client.post(self.base_url+"/search", data={"filter":filters})
+
+            if "error" in response:
+                raise ValueError(
+                    f"Error from Zendesk API: {response['error']} - {response.get('description')}"
+                )
+
+            records.extend(self._parse_response(response))
+            links = response.get("links", {})
+            next_cursor_url = links.get("next")
+
+            if not next_cursor_url:
+                break
+            # Extract value from 'page[after]' of URL 'next'
+            # Example "next_cursor_url": "/custom_objects/myobject/records?page[after]=xyz"
+            parsed_url = urlparse(next_cursor_url)
+            next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
+        return records
+
+    def find_with_pagination(self, filters, page_size=100, after_cursor=None, before_cursor=None):
+        """
+        Returns a paginated response including metadata and links.
+        The instrunctions for the filter are the same as the find method.
+        """
+        params = {"page[size]": page_size}
+        if after_cursor:
+            params["page[after]"] = after_cursor
+        if before_cursor:
+            params["page[before]"] = before_cursor
+
+        response = self.client.post(self.base_url+"/search", data={"filter":filters}, params=params)
 
         if "error" in response:
             raise ValueError(
@@ -103,7 +163,7 @@ class QuerySet:
         if response.get("custom_object_records"):
             records = response.get("custom_object_records", [])
             for record in records:
-                results.append(self.queryset.parse_record_fields(record))
+                results.append(self.parse_record_fields(record))
 
         return {
             "count": response.get("count", ""),
