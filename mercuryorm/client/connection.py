@@ -65,7 +65,7 @@ class ZendeskAPIClient:
                 "status_code": response.status_code,
             }
 
-    def post(self, endpoint, data, timeout=10):
+    def post(self, endpoint, data, params=None, timeout=10):
         """
         Sends a POST request to the Zendesk API.
 
@@ -86,6 +86,7 @@ class ZendeskAPIClient:
             json=data,
             auth=self.auth,
             timeout=timeout,
+            params=params
         )
         try:
             data = response.json()
