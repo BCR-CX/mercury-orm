@@ -41,6 +41,20 @@ class CustomObject:
         """
         return f"<{self.__str__()} object at {hex(id(self))}>"
 
+    def isnamefield(self):
+        """Check if the object has a NameField"""
+        return isinstance(
+            next(
+                (
+                    value
+                    for key, value in self.__class__.__dict__.items()
+                    if key == "name"
+                ),
+                None,
+            ),
+            fields.NameField,
+        )
+
     def save(self):
         """
         Saves the record in Zendesk (creates or updates).
@@ -48,10 +62,15 @@ class CustomObject:
         data = {
             "custom_object_record": {
                 "custom_object_fields": self.to_dict(),
-                "name": getattr(self, "name") or "Unnamed Object",
+                "name": (
+                    getattr(self, "name") or "Unnamed Object"
+                    if not self.isnamefield()
+                    else None
+                ),
                 "external_id": getattr(self, "external_id", None),
             }
         }
+        # -> If object not contains a NameField type, the name field is Unnamed Object or a name passed
 
         if not hasattr(self, "id") or not self.id:
             response = self.client.post(
