@@ -40,7 +40,7 @@ class NameField(Field):  # pylint: disable=too-few-public-methods
         autoincrement_prefix="",
         autoincrement_padding=0,
         autoincrement_next_sequence=1,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """
         Initializes a NameField object.
 

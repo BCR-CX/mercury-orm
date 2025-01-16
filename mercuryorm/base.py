@@ -70,7 +70,8 @@ class CustomObject:
                 "external_id": getattr(self, "external_id", None),
             }
         }
-        # -> If object not contains a NameField type, the name field is Unnamed Object or a name passed
+        # -> If object not contains a NameField type
+        # the name field is Unnamed Object or a name passed
 
         if not hasattr(self, "id") or not self.id:
             response = self.client.post(

@@ -172,7 +172,7 @@ class ZendeskObjectManager:
         autoincrement_prefix,
         autoincrement_padding,
         autoincrement_next_sequence,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """
         Updates the name field properties of a Custom Object.
         Args:
@@ -181,7 +181,8 @@ class ZendeskObjectManager:
             autoincrement_enabled (bool): Whether the name field should be autoincremented.
             autoincrement_prefix (str): The prefix for the autoincremented name field.
             autoincrement_padding (int): The padding for the autoincremented name field.
-            autoincrement_next_sequence (int): The next sequence number for the autoincremented name field.
+            autoincrement_next_sequence (int): The next sequence number for
+            the autoincremented name field.
 
         Returns:
             dict: The response from Zendesk API with the updated field.
@@ -249,16 +250,12 @@ class ZendeskObjectManager:
         Returns:
             None
         """
-        count_name_fields = len(
-            [
-                field
-                for field in model.__dict__.values()
-                if isinstance(field, fields.NameField)
-            ]
-        )
-
-        if count_name_fields > 1:
-            raise ValueError("Only one NameField is allowed per Custom Object")
+        for field_name, field in model.__dict__.items():
+            if isinstance(field, fields.NameField):
+                if field_name != "name":
+                    raise ValueError(
+                        "NameField must be named 'name' and be the only one."
+                    )
 
         custom_object_key = model.__name__.lower()
         self.create_custom_object(
