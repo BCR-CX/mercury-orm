@@ -3,13 +3,18 @@ This module contains the `ZendeskObjectManager` class, which manages the operati
 related to Zendesk custom objects and their fields.
 """
 
-import os
 import logging
-from unidecode import unidecode
-from dotenv import load_dotenv  # pylint: disable=import-error
-from mercuryorm.client.connection import ZendeskAPIClient
-from mercuryorm import fields
+import os
 
+from dotenv import load_dotenv  # pylint: disable=import-error
+from unidecode import unidecode
+
+from mercuryorm import fields
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.exceptions import (
+    NameFieldError,
+    NameFieldUniqueAndAutoIncrementConflictError,
+)
 
 load_dotenv()
 
@@ -189,7 +194,7 @@ class ZendeskObjectManager:
         """
 
         if unique == autoincrement_enabled:
-            raise ValueError("Field must be either unique or autoincremented, not both")
+            raise NameFieldUniqueAndAutoIncrementConflictError()
 
         endpoint = f"/custom_objects/{custom_object_key}/fields/standard::name"
         data = {
@@ -253,9 +258,7 @@ class ZendeskObjectManager:
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.NameField):
                 if field_name != "name":
-                    raise ValueError(
-                        "NameField must be named 'name' and be the only one."
-                    )
+                    raise NameFieldError()
 
         custom_object_key = model.__name__.lower()
         self.create_custom_object(
