@@ -83,6 +83,7 @@ class CustomObject:
             ):
                 raise UniqueConstraintError(getattr(self, "name"))
             self.id = response["custom_object_record"]["id"]
+            self.name = response["custom_object_record"]["name"]
             return response
         return self.client.patch(
             f"/custom_objects/{self.__class__.__name__.lower()}/records/{self.id}", data
