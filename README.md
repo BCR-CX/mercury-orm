@@ -6,9 +6,10 @@ Mercury is a Python ORM (Object-Relational Mapping) designed to integrate seamle
 
 -   **Custom Object Representation**: Define Zendesk custom objects using Python classes.
 -   **Automatic Record Management**: Built-in methods for creating, reading, updating, and deleting records via Zendesk's API.
--   **Support for All Field Types**: Compatible with all Zendesk custom field types including text, dropdown, checkbox, date, integer, and more.
+-   **Support for All Field Types**: Compatible with all Zendesk custom field types including name, text, dropdown, checkbox, date, integer, and more.
 -   **Automatic Object Creation**: Automatically create Zendesk custom objects and fields from Python class definitions.
 -   **Easy Record Operations**: Simple API to manage custom object records, with built-in support for querying, filtering, and pagination.
+-   **Support field Name autoincrement and unique constraint**: Supports automatic field name incrementation and enforcement of unique constraints.
 
 ## Installation
 

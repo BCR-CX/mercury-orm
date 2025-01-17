@@ -3,13 +3,18 @@ This module contains the `ZendeskObjectManager` class, which manages the operati
 related to Zendesk custom objects and their fields.
 """
 
-import os
 import logging
-from unidecode import unidecode
-from dotenv import load_dotenv  # pylint: disable=import-error
-from mercuryorm.client.connection import ZendeskAPIClient
-from mercuryorm import fields
+import os
 
+from dotenv import load_dotenv  # pylint: disable=import-error
+from unidecode import unidecode
+
+from mercuryorm import fields
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.exceptions import (
+    NameFieldError,
+    NameFieldUniqueAndAutoIncrementConflictError,
+)
 
 load_dotenv()
 
@@ -164,6 +169,60 @@ class ZendeskObjectManager:
 
         return self.client.post(endpoint, data)
 
+    def update_custom_object_name(
+        self,
+        custom_object_key,
+        unique,
+        autoincrement_enabled,
+        autoincrement_prefix,
+        autoincrement_padding,
+        autoincrement_next_sequence,
+    ):  # pylint: disable=too-many-arguments
+        """
+        Updates the name field properties of a Custom Object.
+        Args:
+            custom_object_key (str): The key of the custom object.
+            unique (bool): Whether the name field should be unique.
+            autoincrement_enabled (bool): Whether the name field should be autoincremented.
+            autoincrement_prefix (str): The prefix for the autoincremented name field.
+            autoincrement_padding (int): The padding for the autoincremented name field.
+            autoincrement_next_sequence (int): The next sequence number for
+            the autoincremented name field.
+
+        Returns:
+            dict: The response from Zendesk API with the updated field.
+        """
+
+        if unique == autoincrement_enabled:
+            raise NameFieldUniqueAndAutoIncrementConflictError()
+
+        endpoint = f"/custom_objects/{custom_object_key}/fields/standard::name"
+        data = {
+            "custom_object_field": {
+                "properties": {
+                    "is_unique": unique,
+                    "autoincrement_enabled": autoincrement_enabled,
+                    "autoincrement_prefix": autoincrement_prefix,
+                    "autoincrement_padding": autoincrement_padding,
+                    "autoincrement_next_sequence": autoincrement_next_sequence,
+                }
+            }
+        }
+        return self.client.put(endpoint, data)
+
+    def get_custom_object_fields(self, custom_object_key):
+        """
+        Returns a list of existing fields from a Custom Object.
+        Args:
+            custom_object_key (str): The key of the custom object to list fields for.
+
+        Returns:
+            list: A list of field keys for the custom object.
+        """
+        endpoint = f"/custom_objects/{custom_object_key}/fields"
+        response = self.client.get(endpoint)
+        return response.get("custom_object_fields", [])
+
     def create_custom_object_record(self, custom_object_key, record_data):
         """
         Adds a record (row) to a Custom Object.
@@ -196,6 +255,11 @@ class ZendeskObjectManager:
         Returns:
             None
         """
+        for field_name, field in model.__dict__.items():
+            if isinstance(field, fields.NameField):
+                if field_name != "name":
+                    raise NameFieldError()
+
         custom_object_key = model.__name__.lower()
         self.create_custom_object(
             key=custom_object_key,
@@ -229,6 +293,20 @@ class ZendeskObjectManager:
                         field_key,
                         custom_object_key,
                     )
+            if isinstance(field, fields.NameField):
+                self.update_custom_object_name(
+                    custom_object_key=custom_object_key,
+                    unique=field.unique,
+                    autoincrement_enabled=field.autoincrement_enabled,
+                    autoincrement_prefix=field.autoincrement_prefix,
+                    autoincrement_padding=field.autoincrement_padding,
+                    autoincrement_next_sequence=field.autoincrement_next_sequence,
+                )
+                logging.info(
+                    "Field '%s' created for Custom Object '%s'.",
+                    field.name.lower(),
+                    custom_object_key,
+                )
 
     def get_or_create_custom_object_from_model(self, model):
         """
@@ -273,5 +351,18 @@ class ZendeskObjectManager:
                         field_key,
                         custom_object_key,
                     )
-
+            if isinstance(field, fields.NameField):
+                self.update_custom_object_name(
+                    custom_object_key=custom_object_key,
+                    unique=field.unique,
+                    autoincrement_enabled=field.autoincrement_enabled,
+                    autoincrement_prefix=field.autoincrement_prefix,
+                    autoincrement_padding=field.autoincrement_padding,
+                    autoincrement_next_sequence=field.autoincrement_next_sequence,
+                )
+                logging.info(
+                    "Field '%s' created for Custom Object '%s'.",
+                    field.name.lower(),
+                    custom_object_key,
+                )
         return custom_object, created

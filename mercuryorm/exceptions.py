@@ -53,3 +53,31 @@ class ZendeskForbiddenError(ZendeskAPIError):
     ):
         self.message = message
         super().__init__(self.message)
+
+
+class FieldsError(Exception):
+    """Base exception for all field errors."""
+
+
+class UniqueConstraintError(FieldsError):
+    """Exception for when a field with a unique constraint is violated."""
+
+    def __init__(self, field_name):
+        self.message = f"Field '{field_name}' must be unique, but a record with this value already exists."  # pylint: disable=line-too-long
+        super().__init__(self.message)
+
+
+class NameFieldUniqueAndAutoIncrementConflictError(FieldsError):
+    """Exception for when a NameField is both unique and autoincremented"""
+
+    def __init__(self):
+        self.message = "Field must be either unique or autoincremented, not both."
+        super().__init__(self.message)
+
+
+class NameFieldError(FieldsError):
+    "Exception for when a NameField is not named 'name' or when there is more than one NameField."
+
+    def __init__(self):
+        self.message = "Only one NameField is allowed per custom object, and its name must be 'name'."  # pylint: disable=line-too-long
+        super().__init__(self.message)

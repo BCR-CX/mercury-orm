@@ -3,8 +3,9 @@ Module for handling CustomObject base functionality, including saving, deleting,
 and managing fields for integration with Zendesk API.
 """
 
-from mercuryorm.client.connection import ZendeskAPIClient
 from mercuryorm import fields
+from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.exceptions import UniqueConstraintError
 from mercuryorm.record_manager import RecordManager
 
 
@@ -28,6 +29,7 @@ class CustomObject:
     def __init__(self, **kwargs):
         self.client = ZendeskAPIClient()
         self.id = None  # pylint: disable=invalid-name
+        self.name = None
         for field_name, field in self.__class__.__dict__.items():
             if isinstance(field, fields.Field):
                 setattr(self, field_name, kwargs.get(field_name))
@@ -41,6 +43,19 @@ class CustomObject:
         """
         return f"<{self.__str__()} object at {hex(id(self))}>"
 
+    def is_namefield_autoincrement(self):
+        """Check if the object has a NameField and if its autoincrement is enabled."""
+        # Encontra o campo 'name' na classe
+        name_field = next(
+            (value for key, value in self.__class__.__dict__.items() if key == "name"),
+            None,
+        )
+
+        if isinstance(name_field, fields.NameField):
+            return name_field.autoincrement_enabled
+
+        return False
+
     def save(self):
         """
         Saves the record in Zendesk (creates or updates).
@@ -48,16 +63,28 @@ class CustomObject:
         data = {
             "custom_object_record": {
                 "custom_object_fields": self.to_dict(),
-                "name": getattr(self, "name") or "Unnamed Object",
+                "name": (
+                    getattr(self, "name") or "Unnamed Object"
+                    if not self.is_namefield_autoincrement()
+                    else None
+                ),
                 "external_id": getattr(self, "external_id", None),
             }
         }
+        # -> If object not contains a NameField type
+        # the name field is Unnamed Object or a name passed
 
         if not hasattr(self, "id") or not self.id:
             response = self.client.post(
                 f"/custom_objects/{self.__class__.__name__.lower()}/records", data
             )
+            if (
+                response.get("details", {}).get("base", [{}])[0].get("description", "")
+                == "Name already exists. Try another one."
+            ):
+                raise UniqueConstraintError(getattr(self, "name"))
             self.id = response["custom_object_record"]["id"]
+            self.name = response["custom_object_record"]["name"]
             return response
         return self.client.patch(
             f"/custom_objects/{self.__class__.__name__.lower()}/records/{self.id}", data
