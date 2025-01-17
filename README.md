@@ -21,15 +21,30 @@ export ZENDESK_API_TOKEN=<your_zendesk_api_token>.
 export ZENDESK_EMAIL=<your_zendesk_email>.
 ```
 
+## Field Types
+Mercury supports various field types, allowing customization of your Zendesk custom objects:
+- **TextField:** For short text data (e.g., names, codes)
+- **TextareaField:** For longer text content (e.g., descriptions)
+- **CheckboxField:** Boolean fields for toggles or binary states
+- **DateField:** Date values represented as strings
+- **IntegerField:** Numeric values for counting or indexing
+- **DecimalField:** Precise decimal values for prices, percentages, etc.
+- **DropdownField:** Predefined selectable options
+- **MultiselectField:** Multiple selectable options
+- **RegexpField:** Regular expressions for pattern matching
+- **LookupField:** Establish relationships with other custom objects
+- **NameField:** Specialized text field with options for either uniqueness or auto-incrementation (cannot be used simultaneously)
+
 ## CRUD Operations with Records
 
 Mercury ORM provides simple methods for performing CRUD (Create, Read, Update, Delete) operations on Zendesk custom object records. Below are examples of how to manage records in your custom objects.
 
 ### Creating a CustomObjects
 
-```
+```python
 class Product(CustomObject):
-    name = fields.TextField("name")
+    #name = fields.NameField(unique=True)
+    name = fields.NameField(autoincrement_enabled=True, autoincrement_prefix="PROD_", autoincrement_padding=5, autoincrement_next_sequence=10)
     code = fields.TextField("code")
     description = fields.TextareaField("description")
     price = fields.DecimalField("price")
@@ -41,7 +56,7 @@ class Product(CustomObject):
 
 Once you define the custom object class, you can create it in Zendesk using ZendeskObjectManager. This will automatically create the custom object and its fields in Zendesk.
 
-```
+```python
 from mercuryormc.zendesk_manager import ZendeskObjectManager
 
 # Create the custom object and fields in Zendesk
@@ -80,7 +95,7 @@ Product.objects.create(name="Sample Product", code="12345", price=99.99, active=
 
 You can retrieve an individual record by using the get() method:
 
-```
+```python
 retrieved_product = Product.objects.get(id=product.id)
 ```
 
@@ -88,7 +103,7 @@ retrieved_product = Product.objects.get(id=product.id)
 
 To update a record, modify its attributes and call the save() method again:
 
-```
+```python
 retrieved_product.price = 89.99
 retrieved_product.save()
 ```
@@ -97,7 +112,7 @@ retrieved_product.save()
 
 To delete a record from Zendesk, call the delete() method on the object:
 
-```
+```python
 retrieved_product.delete()
 ```
 
@@ -105,7 +120,7 @@ retrieved_product.delete()
 
 You can retrieve all records or filter them based on certain criteria.
 
-```
+```python
 all_products = Product.objects.all()
 filtered_products = Product.objects.filter(active=True)
 last_object = Product.objects.last()
