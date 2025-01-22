@@ -96,7 +96,11 @@ class QuerySet:
             if next_cursor:
                 params["page[after]"] = next_cursor
 
-            response = self.client.post(self.base_url+"/search", data={"filter":filters}, params=params)
+            response = self.client.post(
+                self.base_url+"/search",
+                data={"filter":filters},
+                params=params,
+            )
 
             if "error" in response:
                 raise ValueError(
