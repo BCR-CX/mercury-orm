@@ -138,7 +138,7 @@ class QuerySet:
             )
 
         return {
-            "count": self.count(),
+            "count": response.get("count", ""),
             "results": self._parse_response(response),
             "meta": response.get("meta", {}),
             "links": response.get("links", {}),
