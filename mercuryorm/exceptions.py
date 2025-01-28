@@ -81,3 +81,27 @@ class NameFieldError(FieldsError):
     def __init__(self):
         self.message = "Only one NameField is allowed per custom object, and its name must be 'name'."  # pylint: disable=line-too-long
         super().__init__(self.message)
+
+
+class CreateRecordError(Exception):
+    """An exception for all create errors."""
+
+    def __init__(self, message: str | dict):
+        self.message = message
+        super().__init__(self.message)
+
+
+class UpdateRecordError(Exception):
+    """An exception for all update errors."""
+
+    def __init__(self, message: str | dict):
+        self.message = message
+        super().__init__(self.message)
+
+
+class DeleteRecordError(Exception):
+    """An exception for all delete errors."""
+
+    def __init__(self, message: str | dict):
+        self.message = message
+        super().__init__(self.message)

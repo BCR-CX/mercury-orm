@@ -6,7 +6,7 @@ with the Zendesk API, including creating, retrieving, and deleting records.
 import requests
 from mercuryorm.managers import QuerySet
 from mercuryorm.zendesk_manager import ZendeskAPIClient
-from mercuryorm.exceptions import BadRequestError, NotFoundError
+from mercuryorm.exceptions import BadRequestError, DeleteRecordError, NotFoundError
 
 
 class RecordManager:
@@ -84,10 +84,19 @@ class RecordManager:
     def delete(self, record_id):
         """
         Deletes a record by ID.
+
+        Raises:
+            DeleteRecordError: If the record could not be deleted.
         """
-        return self.client.delete(
+        response = self.client.delete(
             f"/custom_objects/{self.model.__name__.lower()}/records/{record_id}"
         )
+        if response.get("status_code", 204) != 204:
+            raise DeleteRecordError(
+                message=response.get("description", "Error deleting record")
+            )
+
+        return response
 
     def last(self):
         """
@@ -133,13 +142,16 @@ class RecordManager:
             after_cursor=after_cursor,
             before_cursor=before_cursor,
         )
+
     def find(self, filters):
         """
         Returns a list of records based on a filter.
         """
         return self.queryset.find(filters)
 
-    def find_paginated(self, filters, page_size=100, after_cursor=None, before_cursor=None):
+    def find_paginated(
+        self, filters, page_size=100, after_cursor=None, before_cursor=None
+    ):
         """
         Returns paginated search results with a filter.
         """
