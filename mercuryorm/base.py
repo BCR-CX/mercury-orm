@@ -5,7 +5,12 @@ and managing fields for integration with Zendesk API.
 
 from mercuryorm import fields
 from mercuryorm.client.connection import ZendeskAPIClient
-from mercuryorm.exceptions import UniqueConstraintError
+from mercuryorm.exceptions import (
+    CreateRecordError,
+    DeleteRecordError,
+    UniqueConstraintError,
+    UpdateRecordError,
+)
 from mercuryorm.record_manager import RecordManager
 
 
@@ -59,6 +64,11 @@ class CustomObject:
     def save(self):
         """
         Saves the record in Zendesk (creates or updates).
+
+        Raises:
+            CreateRecordError: If the record could not be created.
+            UpdateRecordError: If the record could not be updated.
+            UniqueConstraintError: If a unique constraint is violated.
         """
         data = {
             "custom_object_record": {
@@ -83,20 +93,38 @@ class CustomObject:
                 == "Name already exists. Try another one."
             ):
                 raise UniqueConstraintError(getattr(self, "name"))
+            if response.get("status_code", 201) != 201:
+                raise CreateRecordError(
+                    message=response.get("details", "Error creating record")
+                )
             self.id = response["custom_object_record"]["id"]
             self.name = response["custom_object_record"]["name"]
             return response
-        return self.client.patch(
+        response = self.client.patch(
             f"/custom_objects/{self.__class__.__name__.lower()}/records/{self.id}", data
         )
+        if response.get("status_code", 200) != 200:
+            raise UpdateRecordError(
+                message=response.get("details", "Error updating record")
+            )
+        return response
 
     def delete(self):
         """
         Deletes the current object from Zendesk using its ID.
+
+        Raises:
+            DeleteRecordError: If the record could not be deleted.
         """
-        return self.client.delete(
+        response = self.client.delete(
             f"/custom_objects/{self.__class__.__name__}/records/{self.id}"
         )
+        if response.get("status_code", 204) != 204:
+            raise DeleteRecordError(
+                message=response.get("description", "Error deleting record")
+            )
+
+        return response
 
     def to_dict(self):
         """

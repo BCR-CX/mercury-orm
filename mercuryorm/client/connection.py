@@ -86,7 +86,7 @@ class ZendeskAPIClient:
             json=data,
             auth=self.auth,
             timeout=timeout,
-            params=params
+            params=params,
         )
         try:
             data = response.json()
@@ -174,7 +174,7 @@ class ZendeskAPIClient:
             timeout (int, optional): Timeout in seconds for the request.
 
         Returns:
-            int: The status code from the Zendesk API.
+            dict: The JSON response from the Zendesk API, including the status code.
 
         Raises:
             requests.exceptions.HTTPError: If the request fails.
@@ -189,7 +189,6 @@ class ZendeskAPIClient:
             return {"status_code": 204}
         try:
             data = response.json()
-            print(data)
             if not response.ok:
                 data.update({"status_code": response.status_code})
             return data
