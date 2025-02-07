@@ -14,6 +14,7 @@ def zendesk_client(monkeypatch):
         client.base_url = "https://mockdomain.zendesk.com/api/v2"
         client.auth = None
         client.headers = {"Content-Type": "application/json"}
+        client.default_params = {"locale": "en"}
         yield client
 
 
@@ -24,6 +25,7 @@ def zendesk_object_manager():
         manager.client.base_url = "https://mockdomain.zendesk.com/api/v2"
         manager.client.headers = {"Content-Type": "application/json"}
         manager.client.auth = None
+        manager.client.default_params = {"locale": "en"}
         yield manager
 
 
