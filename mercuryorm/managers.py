@@ -4,6 +4,7 @@ For Manager and querysets to Records CustomObject
 
 from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.fields import DateField
 
 
 class QuerySet:
@@ -78,13 +79,14 @@ class QuerySet:
             "meta": response.get("meta", {}),
             "links": response.get("links", {}),
         }
+
     def find(self, filters):
         """
-        Returns a list of records that match the specified filter.  
-        The filter is a dictionary and can take the following forms:  
+        Returns a list of records that match the specified filter.
+        The filter is a dictionary and can take the following forms:
             - A single dictionary with a key (field_name) and a value
-            that is another dictionary containing an operator and a value.  
-            - Key(s) named `$and` or `$or`, where the value is a 
+            that is another dictionary containing an operator and a value.
+            - Key(s) named `$and` or `$or`, where the value is a
             list of dictionaries. Each dictionary contains a key (field_name) and a value
             that is another dictionary with an operator and a value.
         """
@@ -97,8 +99,8 @@ class QuerySet:
                 params["page[after]"] = next_cursor
 
             response = self.client.post(
-                self.base_url+"/search",
-                data={"filter":filters},
+                self.base_url + "/search",
+                data={"filter": filters},
                 params=params,
             )
 
@@ -119,7 +121,9 @@ class QuerySet:
             next_cursor = parse_qs(parsed_url.query).get("page[after]", [None])[0]
         return records
 
-    def find_with_pagination(self, filters, page_size=100, after_cursor=None, before_cursor=None):
+    def find_with_pagination(
+        self, filters, page_size=100, after_cursor=None, before_cursor=None
+    ):
         """
         Returns a paginated response including metadata and links.
         The instrunctions for the filter are the same as the find method.
@@ -130,7 +134,9 @@ class QuerySet:
         if before_cursor:
             params["page[before]"] = before_cursor
 
-        response = self.client.post(self.base_url+"/search", data={"filter":filters}, params=params)
+        response = self.client.post(
+            self.base_url + "/search", data={"filter": filters}, params=params
+        )
 
         if "error" in response:
             raise ValueError(
@@ -219,6 +225,14 @@ class QuerySet:
         """
         fields = record_data.get("custom_object_fields", {})
         record = self.model(**fields)
+        for field in dir(self.model):
+            try:
+                if isinstance(getattr(self.model, field), DateField):
+                    field_data = fields.get(field)
+                    if field_data:
+                        setattr(record, field, field_data.split("T")[0])
+            except (AttributeError, TypeError, IndexError):
+                pass
         # Default Fields Zendesk
         record.id = record_data.get("id")
         record.name = record_data.get("name")

@@ -271,7 +271,7 @@ class ZendeskObjectManager:
 
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
-                field_key = field.name.lower()
+                field_key = field.name.lower() if hasattr(field, "name") else field_name
                 if field_key not in existing_fields and field_key != "name":
                     field_type = field.__class__.__name__.lower()
                     if field_type.endswith("field"):
@@ -304,7 +304,7 @@ class ZendeskObjectManager:
                 )
                 logging.info(
                     "Field '%s' created for Custom Object '%s'.",
-                    field.name.lower(),
+                    field.name,
                     custom_object_key,
                 )
 
@@ -329,7 +329,7 @@ class ZendeskObjectManager:
 
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
-                field_key = field.name.lower()
+                field_key = field.name.lower() if hasattr(field, "name") else field_name
                 if field_key not in existing_fields and field_key != "name":
                     field_type = field.__class__.__name__.lower()
                     if field_type.endswith("field"):
@@ -362,7 +362,7 @@ class ZendeskObjectManager:
                 )
                 logging.info(
                     "Field '%s' created for Custom Object '%s'.",
-                    field.name.lower(),
+                    field.name,
                     custom_object_key,
                 )
         return custom_object, created

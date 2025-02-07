@@ -33,6 +33,7 @@ class ZendeskAPIClient:
         )
         self.headers = {"Content-Type": "application/json"}
         self.auth = HTTPBasicAuth(f"{self.email}/token", self.api_token)
+        self.default_params = {"locale": "en"}
 
     def get(self, endpoint, params=None, timeout=10):
         """
@@ -49,6 +50,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        params = {**self.default_params, **(params or {})}
         response = requests.get(
             f"{self.base_url}{endpoint}",
             headers=self.headers,
@@ -80,6 +82,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        params = {**self.default_params, **(params or {})}
         response = requests.post(
             f"{self.base_url}{endpoint}",
             headers=self.headers,
@@ -99,7 +102,7 @@ class ZendeskAPIClient:
                 "status_code": response.status_code,
             }
 
-    def patch(self, endpoint, data, timeout=10):
+    def patch(self, endpoint, data, timeout=10, params=None):
         """
         Sends a PATCH request to the Zendesk API.
 
@@ -114,12 +117,14 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        params = {**self.default_params, **(params or {})}
         response = requests.patch(
             f"{self.base_url}{endpoint}",
             headers=self.headers,
             json=data,
             auth=self.auth,
             timeout=timeout,
+            params=params,
         )
         try:
             data = response.json()
@@ -132,7 +137,7 @@ class ZendeskAPIClient:
                 "status_code": response.status_code,
             }
 
-    def put(self, endpoint, data, timeout=10):
+    def put(self, endpoint, data, timeout=10, params=None):
         """
         Sends a PUT request to the Zendesk API.
 
@@ -147,12 +152,14 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        params = {**self.default_params, **(params or {})}
         response = requests.put(
             f"{self.base_url}{endpoint}",
             headers=self.headers,
             json=data,
             auth=self.auth,
             timeout=timeout,
+            params=params,
         )
         try:
             data = response.json()
@@ -165,7 +172,7 @@ class ZendeskAPIClient:
                 "status_code": response.status_code,
             }
 
-    def delete(self, endpoint, timeout=10):
+    def delete(self, endpoint, timeout=10, params=None):
         """
         Sends a DELETE request to the Zendesk API.
 
@@ -179,11 +186,13 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        params = {**self.default_params, **(params or {})}
         response = requests.delete(
             f"{self.base_url}{endpoint}",
             headers=self.headers,
             auth=self.auth,
             timeout=timeout,
+            params=params,
         )
         if response.status_code == 204:
             return {"status_code": 204}
