@@ -3,7 +3,6 @@ This module contains the `ZendeskObjectManager` class, which manages the operati
 related to Zendesk custom objects and their fields.
 """
 
-from ast import pattern
 import logging
 import os
 
@@ -113,7 +112,8 @@ class ZendeskObjectManager:
             field_type (str): The type of the field (e.g., text, integer).
             key (str): The key of the field.
             title (str): The title of the field.
-            choices (list(str), list(tuple(str))): A list of choices if the field is a dropdown or multiselect.
+            choices (list(str), list(tuple(str))): A list of choices
+            if the field is a dropdown or multiselect.
 
         Returns:
             dict: The response from Zendesk API with the newly created field.

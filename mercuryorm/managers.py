@@ -4,7 +4,6 @@ For Manager and querysets to Records CustomObject
 
 from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
-from mercuryorm.fields import DateField, DropdownField, MultiselectField
 
 
 class QuerySet:
@@ -225,36 +224,6 @@ class QuerySet:
         """
         fields = record_data.get("custom_object_fields", {})
         record = self.model(**fields)
-        for field in dir(self.model):
-            if isinstance(getattr(self.model, field), DateField):
-                field_data = fields.get(field)
-                if field_data:
-                    setattr(record, field, field_data.split("T")[0])
-            if isinstance(getattr(self.model, field), DropdownField) and isinstance(
-                self.model.__dict__[field].choices[0],
-                tuple,
-            ):
-                field_data = fields.get(field)
-                if field_data:
-                    for item in self.model.__dict__[field].choices:
-                        if item[0] == field_data:
-                            field_label = item[1]
-                            setattr(
-                                record,
-                                field,
-                                field_label,
-                            )
-            if isinstance(getattr(self.model, field), MultiselectField) and isinstance(
-                self.model.__dict__[field].choices[0],
-                tuple,
-            ):
-                field_data = fields.get(field)
-                if field_data:
-                    field_labels = []
-                    for item in self.model.__dict__[field].choices:
-                        if item[0] in field_data:
-                            field_labels.append(item[1])
-                    setattr(record, field, field_labels)
         # Default Fields Zendesk
         record.id = record_data.get("id")
         record.name = record_data.get("name")
