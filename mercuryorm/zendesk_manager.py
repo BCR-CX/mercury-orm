@@ -3,6 +3,7 @@ This module contains the `ZendeskObjectManager` class, which manages the operati
 related to Zendesk custom objects and their fields.
 """
 
+from ast import pattern
 import logging
 import os
 
@@ -112,11 +113,12 @@ class ZendeskObjectManager:
             field_type (str): The type of the field (e.g., text, integer).
             key (str): The key of the field.
             title (str): The title of the field.
-            choices (list, optional): A list of choices if the field is a dropdown or multiselect.
+            choices (list(str), list(tuple(str))): A list of choices if the field is a dropdown or multiselect.
 
         Returns:
             dict: The response from Zendesk API with the newly created field.
         """
+        pattern = kwargs.get("pattern")
         choices = kwargs.get("choices")
         if key == "name":
             return {"message": "Field 'name' is not allowed to be created"}
@@ -149,9 +151,13 @@ class ZendeskObjectManager:
         if field_type in ["dropdown", "multiselect"] and choices:
             data["custom_object_field"]["custom_field_options"] = [
                 {
-                    "name": choice,
-                    "raw_name": choice,
-                    "value": unidecode(choice).lower().replace(" ", "_"),
+                    "name": choice if isinstance(choice, str) else choice[0],
+                    "raw_name": choice if isinstance(choice, str) else choice[1],
+                    "value": (
+                        unidecode(choice).lower().replace(" ", "_")
+                        if isinstance(choice, str)
+                        else choice[0]
+                    ),
                 }
                 for choice in choices
             ]
@@ -166,6 +172,8 @@ class ZendeskObjectManager:
                 data["custom_object_field"][
                     "relationship_target_type"
                 ] = f"zen:custom_object:{related_object}"
+        if field_type == "regexp" and pattern:
+            data["custom_object_field"]["regexp_for_validation"] = kwargs.get("pattern")
 
         return self.client.post(endpoint, data)
 
@@ -278,6 +286,7 @@ class ZendeskObjectManager:
                         field_type = field_type.replace("field", "")
                     choices = getattr(field, "choices", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
+                    pattern = getattr(field, "pattern", None)
                     related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
                         custom_object_key=custom_object_key,
@@ -285,6 +294,7 @@ class ZendeskObjectManager:
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
+                        pattern=pattern,
                         is_custom_object=is_custom_object,
                         related_object=related_object,
                     )
@@ -335,6 +345,7 @@ class ZendeskObjectManager:
                     if field_type.endswith("field"):
                         field_type = field_type.replace("field", "")
                     choices = getattr(field, "choices", None)
+                    pattern = getattr(field, "pattern", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
                     related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
@@ -343,6 +354,7 @@ class ZendeskObjectManager:
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
+                        pattern=pattern,
                         is_custom_object=is_custom_object,
                         related_object=related_object,
                     )

@@ -189,13 +189,13 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
     Inherits from Field and allows a set of predefined choices.
     """
 
-    def __init__(self, name, choices):
+    def __init__(self, name, choices: list[str] | list[tuple[str, str]]):
         """
         Initializes a DropdownField object.
 
         Args:
             name (str): The name of the dropdown field.
-            choices (list): A list of options to select from.
+            choices (list) or (list(tuple)): A list of options to select from or a list of tuples with key-label pairs.
         """
         super().__init__(name, "dropdown")
         self.choices = choices
@@ -264,13 +264,13 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
     Inherits from Field and allows multiple choices to be selected.
     """
 
-    def __init__(self, name, choices):
+    def __init__(self, name, choices: list[str] | list[tuple[str, str]]):
         """
         Initializes a MultiselectField object.
 
         Args:
             name (str): The name of the multiselect field.
-            choices (list): A list of selectable options.
+            choices (list) or (list(tuple)): A list of options to select from or a list of tuples with key-label pairs.
         """
         super().__init__(name, "multiselect")
         self.choices = choices
