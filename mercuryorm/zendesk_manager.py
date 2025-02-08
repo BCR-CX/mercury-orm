@@ -137,7 +137,7 @@ class ZendeskObjectManager:
         ):
             data["custom_object_field"]["custom_field_options"] = [
                 {
-                    "name": choice if isinstance(choice, str) else choice[0],
+                    "name": choice if isinstance(choice, str) else choice[1],
                     "raw_name": choice if isinstance(choice, str) else choice[1],
                     "value": (
                         unidecode(choice).lower().replace(" ", "_")
