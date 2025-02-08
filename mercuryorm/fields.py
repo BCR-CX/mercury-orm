@@ -12,6 +12,8 @@ from mercuryorm.exceptions import (
     FieldTypeError,
     InvalidChoiceError,
     InvalidDateFormatError,
+    InvalidRegexError,
+    RegexCompileError,
 )
 
 DEFAULT_FIELDS = [
@@ -369,14 +371,15 @@ class RegexpField(Field):  # pylint: disable=too-few-public-methods
             pattern: The regular expression pattern for validation.
         """
         super().__init__(name, FieldTypes.REGEXP, str)
+        if not self._check_pattern(pattern):
+            raise RegexCompileError(self.name)
         self.pattern = pattern
 
     def _check_pattern(self, pattern: str) -> bool:
-        try:
-            re.compile(pattern)
-            return True
-        except re.error:
-            return False
+        return bool(re.compile(pattern))
+
+    def _check_is_valid_value(self, value: str) -> bool:
+        return bool(re.match(self.pattern, value))
 
     def validate(self, value: str) -> bool:
         """
@@ -395,7 +398,9 @@ class RegexpField(Field):  # pylint: disable=too-few-public-methods
             return True
         if not isinstance(value, str):
             raise FieldTypeError(self.name, str)
-        return self._check_pattern(value)
+        if not self._check_is_valid_value(value):
+            raise InvalidRegexError(self.name, value)
+        return True
 
     def __set__(self, instance: object, value: str | None) -> None:
         super().__set__(instance, value)

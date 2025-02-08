@@ -87,6 +87,22 @@ class InvalidChoiceError(FieldsError):
         super().__init__(self.message)
 
 
+class InvalidRegexError(FieldsError):
+    """Exception for when the regex pattern is invalid."""
+
+    def __init__(self, field_name, value):
+        self.message = f"Invalid value '{value}' for field '{field_name}'."
+        super().__init__(self.message)
+
+
+class RegexCompileError(FieldsError):
+    """Exception for when the regex pattern is invalid."""
+
+    def __init__(self, field_name):
+        self.message = f"Invalid regex pattern in '{field_name}'."
+        super().__init__(self.message)
+
+
 class UniqueConstraintError(FieldsError):
     """Exception for when a field with a unique constraint is violated."""
 
