@@ -4,6 +4,7 @@ This module defines different types of fields that can be used
 to represent and manage data within custom objects.
 """
 
+from enum import Enum
 import re
 from typing import Any, List, Tuple
 
@@ -13,6 +14,47 @@ from mercuryorm.exceptions import (
     InvalidDateFormatError,
 )
 
+DEFAULT_FIELDS = [
+    "id",
+    "name",
+    "created_at",
+    "updated_at",
+    "created_by_user_id",
+    "updated_by_user_id",
+    "external_id",
+]
+
+
+class FieldTypes(Enum):
+    """
+    Enumeration of the different field types available.
+
+    Attributes:
+        NAME: A field representing the name of a custom object.
+        TEXT: A field representing text data.
+        TEXTAREA: A field representing longer text data.
+        CHECKBOX: A field representing a boolean value.
+        DATE: A field representing a date.
+        INTEGER: A field representing an integer.
+        DECIMAL: A field representing a decimal value.
+        REGEXP: A field validated by a regular expression pattern.
+        DROPDOWN: A field representing a dropdown with selectable options.
+        LOOKUP: A field representing a relationship to another object.
+        MULTISELECT: A field representing multiple selectable options.
+    """
+
+    NAME = "name"
+    TEXT = "text"
+    TEXTAREA = "textarea"
+    CHECKBOX = "checkbox"
+    DATE = "date"
+    INTEGER = "integer"
+    DECIMAL = "decimal"
+    REGEXP = "regexp"
+    DROPDOWN = "dropdown"
+    LOOKUP = "lookup"
+    MULTISELECT = "multiselect"
+
 
 class Field:  # pylint: disable=too-few-public-methods
     """
@@ -20,19 +62,27 @@ class Field:  # pylint: disable=too-few-public-methods
 
     Attributes:
         name (str): The name of the field.
-        field_type (type): The type of the field (e.g., str, int).
+        field_type (FieldTypes): The data type of the field.
+        data_type (type): The Python type of the field.
     """
 
-    def __init__(self, name: str, field_type: type):
+    def __init__(
+        self,
+        name: str,
+        field_type: FieldTypes,
+        data_type: type,
+    ):
         """
         Initialize a Field instance.
 
         Args:
             name: The name of the field.
-            field_type: The data type of the field (e.g., str, int).
+            field_type: The data type of the field.
+            type: The Python type of the field.
         """
         self.name = name
         self.field_type = field_type
+        self.data_type = data_type
 
     def validate(self, value: Any) -> bool:
         """
@@ -49,7 +99,7 @@ class Field:  # pylint: disable=too-few-public-methods
         """
         if value is None:
             return True
-        return isinstance(value, self.field_type)
+        return isinstance(value, self.data_type)
 
     def __get__(self, instance: object, owner: type) -> Any:
         """
@@ -76,7 +126,7 @@ class Field:  # pylint: disable=too-few-public-methods
             FieldTypeError: If validation fails.
         """
         if not self.validate(value):
-            raise FieldTypeError(self.name, self.field_type)
+            raise FieldTypeError(self.name, self.data_type)
         instance.__dict__[self.name] = value
 
 
@@ -107,7 +157,7 @@ class NameField(Field):  # pylint: disable=too-few-public-methods
             autoincrement_next_sequence: A positive integer indicating the
                 difference between the next sequence number and the current one.
         """
-        super().__init__("name", str)
+        super().__init__("name", FieldTypes.NAME, str)
         self.unique = unique
         self.autoincrement_enabled = autoincrement_enabled
         self.autoincrement_prefix = autoincrement_prefix
@@ -136,7 +186,7 @@ class TextField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the text field.
         """
-        super().__init__(name, str)
+        super().__init__(name, FieldTypes.TEXT, str)
 
     def __set__(self, instance: object, value: str | None) -> None:
         super().__set__(instance, value)
@@ -160,7 +210,7 @@ class TextareaField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the textarea field.
         """
-        super().__init__(name, str)
+        super().__init__(name, FieldTypes.TEXTAREA, str)
 
     def __set__(self, instance: object, value: str | None) -> None:
         super().__set__(instance, value)
@@ -184,7 +234,7 @@ class CheckboxField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the checkbox field.
         """
-        super().__init__(name, bool)
+        super().__init__(name, FieldTypes.CHECKBOX, bool)
 
     def __set__(self, instance: object, value: bool | None) -> None:
         super().__set__(instance, value)
@@ -208,7 +258,7 @@ class DateField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the date field.
         """
-        super().__init__(name, str)
+        super().__init__(name, FieldTypes.DATE, str)
 
     def validate(self, value: str) -> bool:
         """
@@ -269,7 +319,7 @@ class IntegerField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the integer field.
         """
-        super().__init__(name, int)
+        super().__init__(name, FieldTypes.INTEGER, int)
 
     def __set__(self, instance: object, value: int | None) -> None:
         super().__set__(instance, value)
@@ -293,7 +343,7 @@ class DecimalField(Field):  # pylint: disable=too-few-public-methods
         Args:
             name: The name of the decimal field.
         """
-        super().__init__(name, float)
+        super().__init__(name, FieldTypes.DECIMAL, float)
 
     def __set__(self, instance: object, value: float | None) -> None:
         super().__set__(instance, value)
@@ -318,8 +368,15 @@ class RegexpField(Field):  # pylint: disable=too-few-public-methods
             name: The name of the regexp field.
             pattern: The regular expression pattern for validation.
         """
-        super().__init__(name, str)
-        self.pattern = re.compile(pattern)
+        super().__init__(name, FieldTypes.REGEXP, str)
+        self.pattern = pattern
+
+    def _check_pattern(self, pattern: str) -> bool:
+        try:
+            re.compile(pattern)
+            return True
+        except re.error:
+            return False
 
     def validate(self, value: str) -> bool:
         """
@@ -338,7 +395,7 @@ class RegexpField(Field):  # pylint: disable=too-few-public-methods
             return True
         if not isinstance(value, str):
             raise FieldTypeError(self.name, str)
-        return bool(self.pattern.match(value))
+        return self._check_pattern(value)
 
     def __set__(self, instance: object, value: str | None) -> None:
         super().__set__(instance, value)
@@ -363,7 +420,7 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
             name: The name of the dropdown field.
             choices: A list of options (str) or key-label tuples (str, str).
         """
-        super().__init__(name, str)
+        super().__init__(name, FieldTypes.DROPDOWN, str)
         self.choices = choices
         self.to_representation = None
         self.possible_keys = None
@@ -397,6 +454,10 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
             raise InvalidChoiceError(self.name, value)
         return True
 
+    def get_to_save(self, instance: object, owner: type) -> str | None:
+        """Returns the selected value for saving."""
+        return super().__get__(instance, owner)
+
     def __get__(self, instance: object, owner: type) -> str | None:
         value = super().__get__(instance, owner)
         if value is None:
@@ -424,7 +485,7 @@ class LookupField(Field):  # pylint: disable=too-few-public-methods
             related_object: The class of the related object.
             is_custom_object: Whether the related object is a custom object.
         """
-        super().__init__(name, type(related_object))
+        super().__init__(name, FieldTypes.LOOKUP, type(related_object))
         self.related_object = related_object
         self.is_custom_object = is_custom_object
 
@@ -488,7 +549,7 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
             name: The name of the multiselect field.
             choices: A list of options (str) or key-label tuples (str, str).
         """
-        super().__init__(name, list)
+        super().__init__(name, FieldTypes.MULTISELECT, list)
         self.choices = choices
         self.to_representation = None
         self.possible_keys = None
@@ -519,6 +580,10 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
             if not self.possible_keys and item not in self.choices:
                 raise InvalidChoiceError(self.name, item)
         return True
+
+    def get_to_save(self, instance: object, owner: type) -> list[str] | None:
+        """Returns the list of selected values for saving."""
+        return super().__get__(instance, owner)
 
     def __get__(self, instance: object, owner: type) -> List[str] | None:
         value: list[str] = super().__get__(instance, owner)

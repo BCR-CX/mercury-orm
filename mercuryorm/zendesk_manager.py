@@ -103,13 +103,13 @@ class ZendeskObjectManager:
         return [field["key"] for field in response.get("custom_object_fields", [])]
 
     def create_custom_object_field(
-        self, custom_object_key, field_type, key, title, **kwargs
+        self, custom_object_key, field_type: fields.FieldTypes, key, title, **kwargs
     ):
         """
         Creates fields (columns) for a Custom Object.
         Args:
             custom_object_key (str): The key of the custom object to add fields to.
-            field_type (str): The type of the field (e.g., text, integer).
+            field_type (FieldTypes): The type of the field (e.g., text, integer).
             key (str): The key of the field.
             title (str): The title of the field.
             choices (list(str), list(tuple(str))): A list of choices
@@ -120,35 +120,21 @@ class ZendeskObjectManager:
         """
         pattern = kwargs.get("pattern")
         choices = kwargs.get("choices")
-        if key == "name":
-            return {"message": "Field 'name' is not allowed to be created"}
-        if key == "external_id":
-            return {"message": "Field 'external_id' is not allowed to be created"}
-        valid_field_types = [
-            "text",
-            "textarea",
-            "checkbox",
-            "date",
-            "integer",
-            "decimal",
-            "regexp",
-            "dropdown",
-            "lookup",
-            "multiselect",
-        ]
-        if field_type not in valid_field_types:
-            raise ValueError(
-                f"Invalid field type '{field_type}'. Must be one of {valid_field_types}."
-            )
+        if key in fields.DEFAULT_FIELDS:
+            return {"message": f"Field '{key}' is not allowed to be created"}
+
         endpoint = f"/custom_objects/{custom_object_key}/fields"
         data = {
             "custom_object_field": {
-                "type": field_type,  # Field type: "text", "integer", etc.
+                "type": field_type.value,  # Field type: "text", "integer", etc.
                 "key": key,
                 "title": title,
             }
         }
-        if field_type in ["dropdown", "multiselect"] and choices:
+        if (
+            field_type in [fields.FieldTypes.DROPDOWN, fields.FieldTypes.MULTISELECT]
+            and choices
+        ):
             data["custom_object_field"]["custom_field_options"] = [
                 {
                     "name": choice if isinstance(choice, str) else choice[0],
@@ -161,7 +147,7 @@ class ZendeskObjectManager:
                 }
                 for choice in choices
             ]
-        if field_type == "lookup":
+        if field_type == fields.FieldTypes.LOOKUP:
             is_custom_object = kwargs.get("is_custom_object")
             related_object = kwargs.get("related_object")
             if not is_custom_object:
@@ -172,7 +158,7 @@ class ZendeskObjectManager:
                 data["custom_object_field"][
                     "relationship_target_type"
                 ] = f"zen:custom_object:{related_object}"
-        if field_type == "regexp" and pattern:
+        if field_type == fields.FieldTypes.REGEXP and pattern:
             data["custom_object_field"]["regexp_for_validation"] = kwargs.get("pattern")
 
         return self.client.post(endpoint, data)
@@ -280,17 +266,14 @@ class ZendeskObjectManager:
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
                 field_key = field.name.lower() if hasattr(field, "name") else field_name
-                if field_key not in existing_fields and field_key != "name":
-                    field_type = field.__class__.__name__.lower()
-                    if field_type.endswith("field"):
-                        field_type = field_type.replace("field", "")
+                if field_key not in existing_fields:
                     choices = getattr(field, "choices", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
                     pattern = getattr(field, "pattern", None)
                     related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
                         custom_object_key=custom_object_key,
-                        field_type=field_type,
+                        field_type=field.field_type,
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
@@ -340,17 +323,14 @@ class ZendeskObjectManager:
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
                 field_key = field.name.lower() if hasattr(field, "name") else field_name
-                if field_key not in existing_fields and field_key != "name":
-                    field_type = field.__class__.__name__.lower()
-                    if field_type.endswith("field"):
-                        field_type = field_type.replace("field", "")
+                if field_key not in existing_fields:
                     choices = getattr(field, "choices", None)
                     pattern = getattr(field, "pattern", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
                     related_object = getattr(field, "related_object", None)
                     self.create_custom_object_field(
                         custom_object_key=custom_object_key,
-                        field_type=field_type,
+                        field_type=field.field_type,
                         key=field_key,
                         title=field_name.capitalize(),
                         choices=choices,
