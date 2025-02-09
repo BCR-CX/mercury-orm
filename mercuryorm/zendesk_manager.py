@@ -12,6 +12,7 @@ from unidecode import unidecode
 from mercuryorm import fields
 from mercuryorm.client.connection import ZendeskAPIClient
 from mercuryorm.exceptions import (
+    CustomObjectFieldCreationError,
     NameFieldError,
     NameFieldUniqueAndAutoIncrementConflictError,
 )
@@ -265,25 +266,34 @@ class ZendeskObjectManager:
 
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
-                field_key = field.name.lower() if hasattr(field, "name") else field_name
-                if field_key not in existing_fields:
+                title = field.name if hasattr(field, "name") else field_name
+                if field_name not in existing_fields:
                     choices = getattr(field, "choices", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
                     pattern = getattr(field, "pattern", None)
                     related_object = getattr(field, "related_object", None)
-                    self.create_custom_object_field(
+                    response = self.create_custom_object_field(
                         custom_object_key=custom_object_key,
                         field_type=field.field_type,
-                        key=field_key,
-                        title=field_name.capitalize(),
+                        key=field_name,
+                        title=title,
                         choices=choices,
                         pattern=pattern,
                         is_custom_object=is_custom_object,
                         related_object=related_object,
                     )
+                    if response.get("status_code", 201) != 201:
+                        error = (
+                            response.get("details", {})
+                            .get("key", [{}])[0]
+                            .get("description", "Unknown error")
+                        )
+                        raise CustomObjectFieldCreationError(
+                            f"Error creating field '{field_name}': {error}"
+                        )
                     logging.info(
                         "Field '%s' created for Custom Object '%s'.",
-                        field_key,
+                        field_name,
                         custom_object_key,
                     )
             if isinstance(field, fields.NameField):
@@ -322,25 +332,34 @@ class ZendeskObjectManager:
 
         for field_name, field in model.__dict__.items():
             if isinstance(field, fields.Field):
-                field_key = field.name.lower() if hasattr(field, "name") else field_name
-                if field_key not in existing_fields:
+                title = field.name if hasattr(field, "name") else field_name
+                if field_name not in existing_fields:
                     choices = getattr(field, "choices", None)
                     pattern = getattr(field, "pattern", None)
                     is_custom_object = getattr(field, "is_custom_object", None)
                     related_object = getattr(field, "related_object", None)
-                    self.create_custom_object_field(
+                    response = self.create_custom_object_field(
                         custom_object_key=custom_object_key,
                         field_type=field.field_type,
-                        key=field_key,
-                        title=field_name.capitalize(),
+                        key=field_name,
+                        title=title,
                         choices=choices,
                         pattern=pattern,
                         is_custom_object=is_custom_object,
                         related_object=related_object,
                     )
+                    if response.get("status_code", 201) != 201:
+                        error = (
+                            response.get("details", {})
+                            .get("key", [{}])[0]
+                            .get("description", "Unknown error")
+                        )
+                        raise CustomObjectFieldCreationError(
+                            f"Error creating field '{field_name}': {error}"
+                        )
                     logging.info(
                         "Field '%s' created for Custom Object '%s'.",
-                        field_key,
+                        field_name,
                         custom_object_key,
                     )
             if isinstance(field, fields.NameField):

@@ -49,7 +49,7 @@ class RecordManager:
                     raise NotFoundError(self.model.__name__, record_id) from e
                 raise e
             record_data = response.get("custom_object_record", {})
-            record = self.queryset.parse_record_fields(record_data)
+            record = self.model.parse_record_fields(**record_data)
             return record
 
         result = self.filter(**kwargs)
@@ -110,8 +110,8 @@ class RecordManager:
         )
 
         if response.get("custom_object_records"):
-            record = self.queryset.parse_record_fields(
-                response["custom_object_records"][0]
+            record = self.model.parse_record_fields(
+                **response["custom_object_records"][0]
             )
             return record
         return None
@@ -127,7 +127,7 @@ class RecordManager:
         if response.get("custom_object_records"):
             records = response.get("custom_object_records", [])
             for record in records:
-                results.append(self.queryset.parse_record_fields(record))
+                results.append(self.model.parse_record_fields(**record))
         return results
 
     def search_paginated(

@@ -149,3 +149,11 @@ class DeleteRecordError(Exception):
     def __init__(self, message: str | dict):
         self.message = message
         super().__init__(self.message)
+
+
+class CustomObjectFieldCreationError(Exception):
+    """An exception for all custom object field creation errors."""
+
+    def __init__(self, message: str | dict):
+        self.message = message
+        super().__init__(self.message)

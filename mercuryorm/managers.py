@@ -170,7 +170,7 @@ class QuerySet:
         if response.get("custom_object_records"):
             records = response.get("custom_object_records", [])
             for record in records:
-                results.append(self.parse_record_fields(record))
+                results.append(self.model.parse_record_fields(**record))
 
         return {
             "count": response.get("count", ""),
@@ -214,22 +214,6 @@ class QuerySet:
         """
         records = []
         for record_data in response.get("custom_object_records", []):
-            record = self.parse_record_fields(record_data)
+            record = self.model.parse_record_fields(**record_data)
             records.append(record)
         return records
-
-    def parse_record_fields(self, record_data):
-        """
-        Internal method to process the API response and extract the records fields.
-        """
-        fields = record_data.get("custom_object_fields", {})
-        record = self.model(**fields)
-        # Default Fields Zendesk
-        record.id = record_data.get("id")
-        record.name = record_data.get("name")
-        record.created_at = record_data.get("created_at")
-        record.updated_at = record_data.get("updated_at")
-        record.created_by_user_id = record_data.get("created_by_user_id")
-        record.updated_by_user_id = record_data.get("updated_by_user_id")
-        record.external_id = record_data.get("external_id")
-        return record
