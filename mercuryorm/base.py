@@ -134,31 +134,26 @@ class CustomObject:
         Returns:
             dict: A dictionary containing the object's fields and values.
         """
-        default_fields = {
-            "id": getattr(self, "id", None),
-            "name": getattr(self, "name", None),
-            "created_at": getattr(self, "created_at", None),
-            "updated_at": getattr(self, "updated_at", None),
-            "created_by_user_id": getattr(self, "created_by_user_id", None),
-            "updated_by_user_id": getattr(self, "updated_by_user_id", None),
-            "external_id": getattr(self, "external_id", None),
-        }
-
-        custom_fields = {
-            field_name: getattr(self, field_name)
-            for field_name, field in self.__class__.__dict__.items()
-            if isinstance(field, fields.Field)
-        }
-
-        default_fields = {
-            key: value for key, value in default_fields.items() if value is not None
-        }
-        return {**custom_fields, **default_fields}
+        return self._format_fields()
 
     def to_save(self):
         """
         Converts the current object to a dictionary format for saving in Zendesk,
         including custom fields and default fields required by the API.
+
+        Returns:
+            dict: A dictionary containing the object's
+            fields and values to save on Zendesk.
+        """
+        return self._format_fields(to_save=True)
+
+    def _format_fields(self, to_save: bool = False):
+        """
+        Formats the fields of the object to be sent to the API.
+
+        Args:
+            to_save (bool, optional): If True, the method will format the fields for saving
+                in Zendesk. If False, it will format the fields for conversion to a dictionary.
 
         Returns:
             dict: A dictionary containing the object's fields and values.
@@ -175,7 +170,10 @@ class CustomObject:
         custom_fields = {}
 
         for field_name, field in self.__class__.__dict__.items():
-            if isinstance(field, (fields.DropdownField, fields.MultiselectField)):
+            if (
+                isinstance(field, (fields.DropdownField, fields.MultiselectField))
+                and to_save
+            ):
                 custom_fields[field_name] = None
                 if getattr(self, field_name) is not None:
                     custom_fields[field_name] = self.__class__.__dict__[
