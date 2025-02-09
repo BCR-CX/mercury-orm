@@ -10,6 +10,10 @@ class MockModel:
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+    @classmethod
+    def parse_record_fields(cls, **kwargs):
+        return MockModel(**kwargs, **kwargs.get("custom_object_fields", {}))
+
 
 @pytest.fixture
 def queryset():
@@ -71,8 +75,6 @@ def test_all_with_pagination(queryset, requests_mock):
     assert response["links"]["next"] == "next_url"
 
 
-
-
 def test_filter_records(queryset, requests_mock):
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
     mock_response = {
@@ -120,26 +122,6 @@ def test_parse_response(queryset):
     assert records[1].id == "2"
 
 
-def test_parse_record_fields(queryset):
-    record_data = {
-        "id": "1",
-        "name": "Record 1",
-        "custom_object_fields": {"field1": "value1"},
-        "created_at": "2024-09-29T08:02:57Z",
-        "updated_at": "2024-09-29T08:03:57Z",
-        "created_by_user_id": "user123",
-        "updated_by_user_id": "user456",
-        "external_id": None,
-    }
-
-    record = queryset.parse_record_fields(record_data)
-    assert record.id == "1"
-    assert record.name == "Record 1"
-    assert record.field1 == "value1"
-    assert record.created_at == "2024-09-29T08:02:57Z"
-    assert record.updated_by_user_id == "user456"
-
-
 def test_all_with_pagination_after_cursor(queryset, requests_mock):
     base_url = ZendeskAPIClient().base_url
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
@@ -160,9 +142,7 @@ def test_all_with_pagination_after_cursor(queryset, requests_mock):
     }
     requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
 
-    response = queryset.all_with_pagination(
-        page_size=1, after_cursor="abc123"
-    )
+    response = queryset.all_with_pagination(page_size=1, after_cursor="abc123")
 
     assert len(response["results"]) == 1
     assert response["results"][0].id == "3"

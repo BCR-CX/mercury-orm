@@ -82,6 +82,10 @@ class MockModel:
     def save(self):
         return {"id": "123", "custom_object_fields": self.__dict__}
 
+    @classmethod
+    def parse_record_fields(cls, **kwargs):
+        return MockModel(**kwargs, **kwargs.get("custom_object_fields", {}))
+
 
 @pytest.fixture
 def record_manager():
