@@ -1,4 +1,6 @@
 import pytest
+
+from mercuryorm.fields import FieldTypes
 from .conftest import MockModel
 
 
@@ -91,7 +93,7 @@ def test_create_custom_object_field(zendesk_object_manager, requests_mock):
 
     field = zendesk_object_manager.create_custom_object_field(
         custom_object_key="test_object",
-        field_type="text",
+        field_type=FieldTypes.TEXT,
         key="field_key",
         title="Field Title",
     )
@@ -108,7 +110,7 @@ def test_create_custom_object_field_with_name(zendesk_object_manager, requests_m
 
     field = zendesk_object_manager.create_custom_object_field(
         custom_object_key="test_object",
-        field_type="text",
+        field_type=FieldTypes.TEXT,
         key="name",
         title="Field Title",
     )
@@ -131,7 +133,7 @@ def test_create_custom_object_field_with_external_id(
 
     field = zendesk_object_manager.create_custom_object_field(
         custom_object_key="test_object",
-        field_type="text",
+        field_type=FieldTypes.TEXT,
         key="external_id",
         title="Field Title",
     )

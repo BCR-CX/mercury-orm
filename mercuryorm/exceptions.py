@@ -59,6 +59,50 @@ class FieldsError(Exception):
     """Base exception for all field errors."""
 
 
+class FieldTypeError(FieldsError):
+    """Exception for when the value type of a field is invalid."""
+
+    def __init__(self, field_name, field_type):
+        self.message = (
+            f"Invalid value type for field '{field_name}'. Expected '{field_type}'."
+        )
+        super().__init__(self.message)
+
+
+class InvalidDateFormatError(FieldsError):
+    """Exception for when the date format is invalid."""
+
+    def __init__(self, field_name):
+        self.message = (
+            f"Invalid date format for field '{field_name}'. Expected 'YYYY-MM-DD'."
+        )
+        super().__init__(self.message)
+
+
+class InvalidChoiceError(FieldsError):
+    """Exception for when the choice is not in the choices list."""
+
+    def __init__(self, field_name, choice):
+        self.message = f"Invalid choice '{choice}' for field '{field_name}'."
+        super().__init__(self.message)
+
+
+class InvalidRegexError(FieldsError):
+    """Exception for when the regex pattern is invalid."""
+
+    def __init__(self, field_name, value):
+        self.message = f"Invalid value '{value}' for field '{field_name}'."
+        super().__init__(self.message)
+
+
+class RegexCompileError(FieldsError):
+    """Exception for when the regex pattern is invalid."""
+
+    def __init__(self, field_name):
+        self.message = f"Invalid regex pattern in '{field_name}'."
+        super().__init__(self.message)
+
+
 class UniqueConstraintError(FieldsError):
     """Exception for when a field with a unique constraint is violated."""
 
