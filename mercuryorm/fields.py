@@ -8,6 +8,8 @@ from enum import Enum
 import re
 from typing import Any, List, Tuple
 
+from unidecode import unidecode
+
 from mercuryorm.exceptions import (
     FieldTypeError,
     InvalidChoiceError,
@@ -432,6 +434,10 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
         if choices and isinstance(choices[0], tuple):
             self.to_representation = dict(choices)
             self.possible_keys = [key for key, _ in choices]
+        else:
+            self.possible_keys = [
+                unidecode(choice).lower().replace(" ", "_") for choice in choices
+            ]
 
     def __set__(self, instance: object, value: str | None) -> None:
         super().__set__(instance, value)
@@ -454,8 +460,6 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
         if not isinstance(value, str):
             raise FieldTypeError(self.name, str)
         if self.possible_keys and value not in self.possible_keys:
-            raise InvalidChoiceError(self.name, value)
-        if not self.possible_keys and value not in self.choices:
             raise InvalidChoiceError(self.name, value)
         return True
 
@@ -561,6 +565,10 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
         if choices and isinstance(choices[0], tuple):
             self.to_representation = dict(choices)
             self.possible_keys = [key for key, _ in choices]
+        else:
+            self.possible_keys = [
+                unidecode(choice).lower().replace(" ", "_") for choice in choices
+            ]
 
     def validate(self, value: str) -> bool:
         """
@@ -581,8 +589,6 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
             raise FieldTypeError(self.name, list)
         for item in value:
             if self.possible_keys and item not in self.possible_keys:
-                raise InvalidChoiceError(self.name, item)
-            if not self.possible_keys and item not in self.choices:
                 raise InvalidChoiceError(self.name, item)
         return True
 

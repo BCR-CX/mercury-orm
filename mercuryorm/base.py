@@ -134,26 +134,7 @@ class CustomObject:
         Returns:
             dict: A dictionary containing the object's fields and values.
         """
-        default_fields = {
-            "id": getattr(self, "id", None),
-            "name": getattr(self, "name", None),
-            "created_at": getattr(self, "created_at", None),
-            "updated_at": getattr(self, "updated_at", None),
-            "created_by_user_id": getattr(self, "created_by_user_id", None),
-            "updated_by_user_id": getattr(self, "updated_by_user_id", None),
-            "external_id": getattr(self, "external_id", None),
-        }
-
-        custom_fields = {
-            field_name: getattr(self, field_name)
-            for field_name, field in self.__class__.__dict__.items()
-            if isinstance(field, fields.Field)
-        }
-
-        default_fields = {
-            key: value for key, value in default_fields.items() if value is not None
-        }
-        return {**custom_fields, **default_fields}
+        return self._format_fields()
 
     def to_save(self):
         """
@@ -161,31 +142,61 @@ class CustomObject:
         including custom fields and default fields required by the API.
 
         Returns:
+            dict: A dictionary containing the object's
+            fields and values to save on Zendesk.
+        """
+        return self._format_fields(to_save=True)
+
+    def _format_fields(self, to_save: bool = False) -> dict:
+        """
+        Formats the fields of the object to be sent to the API.
+
+        Args:
+            to_save (bool, optional): If True, the method will format the fields for saving
+                in Zendesk. If False, it will format the fields for conversion to a dictionary.
+
+        Returns:
             dict: A dictionary containing the object's fields and values.
         """
-        default_fields = {
-            "id": getattr(self, "id", None),
-            "name": getattr(self, "name", None),
-            "created_at": getattr(self, "created_at", None),
-            "updated_at": getattr(self, "updated_at", None),
-            "created_by_user_id": getattr(self, "created_by_user_id", None),
-            "updated_by_user_id": getattr(self, "updated_by_user_id", None),
-            "external_id": getattr(self, "external_id", None),
-        }
-        custom_fields = {}
+        instance_fields = {}
 
         for field_name, field in self.__class__.__dict__.items():
-            if isinstance(field, (fields.DropdownField, fields.MultiselectField)):
-                custom_fields[field_name] = None
+            if (
+                isinstance(field, (fields.DropdownField, fields.MultiselectField))
+                and to_save
+            ):
+                instance_fields[field_name] = None
                 if getattr(self, field_name) is not None:
-                    custom_fields[field_name] = self.__class__.__dict__[
+                    instance_fields[field_name] = self.__class__.__dict__[
                         field_name
                     ].get_to_save(self, None)
 
             elif isinstance(field, fields.Field):
-                custom_fields[field_name] = getattr(self, field_name)
+                instance_fields[field_name] = getattr(self, field_name)
+            elif field_name in fields.DEFAULT_FIELDS:
+                instance_fields[field_name] = getattr(self, field_name)
 
-        default_fields = {
-            key: value for key, value in default_fields.items() if value is not None
-        }
-        return {**custom_fields, **default_fields}
+        return instance_fields
+
+    @classmethod
+    def parse_record_fields(cls, **record_data):
+        """
+        Parses the fields of a record from the Zendesk API response.
+
+        Args:
+            record_data (dict): The data of the record to parse.
+
+        Returns:
+            CustomObject: A CustomObject instance with the fields populated.
+        """
+        instance = cls()
+        custom_fields = dict(record_data.get("custom_object_fields", {}).items())
+
+        for field_name, field in instance.__class__.__dict__.items():
+            if isinstance(field, fields.Field):
+                setattr(instance, field_name, custom_fields.get(field_name))
+
+        for field in fields.DEFAULT_FIELDS:
+            setattr(instance, field, record_data.get(field))
+
+        return instance
