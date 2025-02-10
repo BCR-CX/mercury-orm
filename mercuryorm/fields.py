@@ -349,10 +349,10 @@ class DecimalField(Field):  # pylint: disable=too-few-public-methods
         """
         super().__init__(name, FieldTypes.DECIMAL, float)
 
-    def __set__(self, instance: object, value: float | None) -> None:
-        super().__set__(instance, value)
+    def __set__(self, instance: object, value: float | int | None) -> None:
+        super().__set__(instance, float(value) if value is not None else None)
 
-    def __get__(self, instance: object, owner: type) -> float | None:
+    def __get__(self, instance: object, owner: type) -> float | int | None:
         value = super().__get__(instance, owner)
         return value
 
