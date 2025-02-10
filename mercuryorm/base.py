@@ -61,16 +61,11 @@ class CustomObject:
 
         return False
 
-    def save(self):
+    def format_record(self):
         """
-        Saves the record in Zendesk (creates or updates).
-
-        Raises:
-            CreateRecordError: If the record could not be created.
-            UpdateRecordError: If the record could not be updated.
-            UniqueConstraintError: If a unique constraint is violated.
+        Formats the current object to be sent to the API.
         """
-        data = {
+        return {
             "custom_object_record": {
                 "custom_object_fields": self.to_save(),
                 "name": (
@@ -81,6 +76,17 @@ class CustomObject:
                 "external_id": getattr(self, "external_id", None),
             }
         }
+
+    def save(self):
+        """
+        Saves the record in Zendesk (creates or updates).
+
+        Raises:
+            CreateRecordError: If the record could not be created.
+            UpdateRecordError: If the record could not be updated.
+            UniqueConstraintError: If a unique constraint is violated.
+        """
+        data = self.format_record()
         # -> If object not contains a NameField type
         # the name field is Unnamed Object or a name passed
 
