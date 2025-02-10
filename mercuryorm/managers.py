@@ -2,8 +2,30 @@
 For Manager and querysets to Records CustomObject
 """
 
+from enum import Enum
 from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
+
+
+class BulkActions(Enum):
+    """
+    Enumeration of the bulk operations on records.
+
+    Attributes:
+        CREATE: Create records in bulk.
+        UPDATE: Update records in bulk.
+        DELETE_BY_EXTERNAL_ID: Delete records by external ID in bulk.
+        CREATE_OR_UPDATE_BY_EXTERNAL_ID: Create or update records by external ID in bulk.
+        CREATE_OR_UPDATE_BY_NAME: Create or update records by name in bulk.
+        DELETE: Delete records in bulk.
+    """
+
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE_BY_EXTERNAL_ID = "delete_by_external_id"
+    CREATE_OR_UPDATE_BY_EXTERNAL_ID = "create_or_update_by_external_id"
+    CREATE_OR_UPDATE_BY_NAME = "create_or_update_by_name"
+    DELETE = "delete"
 
 
 class QuerySet:
@@ -207,6 +229,50 @@ class QuerySet:
             f"/custom_objects/{self.model.__name__.lower()}/records/count"
         )
         return response["count"]["value"]
+
+    def bulk(self, records: dict, action: BulkActions):
+        """
+        Create, update, delete records in bulk, using the Bulk API.
+
+        Args:
+            records (list): List of records to be created, updated or deleted.
+
+        Returns:
+            dict: Response from the API.
+        """
+
+        start = 0
+        end = 100
+        limit = len(records)
+
+        responses = []
+
+        while True:
+            data = {
+                "job": {
+                    "action": action.value,
+                    "items": [
+                        record.format_record()["custom_object_record"]
+                        for record in records[start:end]
+                    ],
+                }
+            }
+
+            responses.append(
+                self.client.post(
+                    f"/custom_objects/{self.model.__name__.lower()}/jobs", data
+                )
+            )
+
+            start = end
+            if end >= limit:
+                break
+            if end + 100 > limit:
+                end = limit
+            else:
+                end += 100
+
+        return responses
 
     def _parse_response(self, response):
         """

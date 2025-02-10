@@ -4,9 +4,14 @@ with the Zendesk API, including creating, retrieving, and deleting records.
 """
 
 import requests
-from mercuryorm.managers import QuerySet
+from mercuryorm.managers import BulkActions, QuerySet
 from mercuryorm.zendesk_manager import ZendeskAPIClient
-from mercuryorm.exceptions import BadRequestError, DeleteRecordError, NotFoundError
+from mercuryorm.exceptions import (
+    BadRequestError,
+    BulkRecordsError,
+    DeleteRecordError,
+    NotFoundError,
+)
 
 
 class RecordManager:
@@ -19,6 +24,7 @@ class RecordManager:
         self.model = model
         self.queryset = QuerySet(model)
         self.client = ZendeskAPIClient()
+        self.bulk = Bulk(self.queryset)
 
     def create(self, **kwargs):
         """
@@ -161,3 +167,87 @@ class RecordManager:
             after_cursor=after_cursor,
             before_cursor=before_cursor,
         )
+
+
+class Bulk:
+    """
+    Manages the creation of multiple records in bulk.
+    """
+
+    def __init__(self, queryset):
+        self.queryset = queryset
+
+    def _validate(self, field: str, records: list):
+        """
+        Validates the field to be used in the bulk action.
+
+        Raises:
+            BulkRecordsError: If the field is not present in all records.
+        """
+        for record in records:
+            if not getattr(record, field):
+                raise BulkRecordsError(
+                    f"Every Record will contain the field: '{field}'."
+                )
+
+    def create(self, records: list):
+        """
+        Creates multiple records in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to create.
+        """
+        return self.queryset.bulk(records, BulkActions.CREATE)
+
+    def update(self, records: list):
+        """
+        Updates multiple records in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to update.
+        """
+        self._validate("id", records)
+        return self.queryset.bulk(records, BulkActions.UPDATE)
+
+    def delete(self, records: list):
+        """
+        Deletes multiple records in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to delete.
+        """
+        self._validate("id", records)
+        return self.queryset.bulk(records, BulkActions.DELETE)
+
+    def delete_by_external_id(self, records: list):
+        """
+        Deletes multiple records by external ID in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to delete,
+            every will have to have a external_id.
+        """
+        self._validate("external_id", records)
+        return self.queryset.bulk(records, BulkActions.DELETE_BY_EXTERNAL_ID)
+
+    def create_or_update_by_external_id(self, records: list):
+        """
+        Creates or updates multiple records by external ID in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to create or update,
+            every will have to have a external_id.
+        """
+        self._validate("external_id", records)
+        return self.queryset.bulk(records, BulkActions.CREATE_OR_UPDATE_BY_EXTERNAL_ID)
+
+    def create_or_update_by_name(self, records: list):
+        """
+        Creates or updates multiple records by name in bulk.
+
+        Args:
+            records (list[CustomObject]): A list of records to create or update,
+            every will have to have a name.
+        """
+        self._validate("name", records)
+        return self.queryset.bulk(records, BulkActions.CREATE_OR_UPDATE_BY_NAME)

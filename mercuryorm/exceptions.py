@@ -157,3 +157,11 @@ class CustomObjectFieldCreationError(Exception):
     def __init__(self, message: str | dict):
         self.message = message
         super().__init__(self.message)
+
+
+class BulkRecordsError(Exception):
+    """An exception for all bulk records errors."""
+
+    def __init__(self, message: str | dict):
+        self.message = message
+        super().__init__(self.message)
