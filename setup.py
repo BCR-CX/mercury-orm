@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mercury-orm",
-    version="{{VERSION_PLACEHOLDER}}",
+    version="0.3.0",
     description="ORM for Custom Objects de Zendesk",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",

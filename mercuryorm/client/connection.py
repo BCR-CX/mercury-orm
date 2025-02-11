@@ -206,3 +206,18 @@ class ZendeskAPIClient:
                 "error": {"title": response.text, "message": str(json_error)},
                 "status_code": response.status_code,
             }
+
+    def upload_file(self, filename: str, content: bytes, timeout: int = 10) -> dict:
+        """
+        Uploads a file to Zendesk.
+        """
+        response = requests.post(
+            f"{self.base_url}/uploads",
+            headers={"Content-Type": "application/binary"},
+            data=content,
+            auth=self.auth,
+            params={"filename": filename},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()
