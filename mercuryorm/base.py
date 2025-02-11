@@ -12,6 +12,7 @@ from mercuryorm.exceptions import (
     UpdateRecordError,
 )
 from mercuryorm.record_manager import RecordManager
+from mercuryorm.file import AttachmentFile
 
 
 class CustomObject:
@@ -36,7 +37,13 @@ class CustomObject:
         self.id = None  # pylint: disable=invalid-name
         self.name = None
         for field_name, field in self.__class__.__dict__.items():
-            if isinstance(field, fields.Field):
+            if isinstance(field, fields.AttachmentField):
+                setattr(
+                    self,
+                    field_name,
+                    AttachmentFile(attachment_id=kwargs.get(field_name)),
+                )
+            elif isinstance(field, fields.Field):
                 setattr(self, field_name, kwargs.get(field_name))
 
     def __str__(self):
@@ -164,25 +171,28 @@ class CustomObject:
         Returns:
             dict: A dictionary containing the object's fields and values.
         """
-        instance_fields = {}
+        fields_dict = {}
+        model_attributes = self.__class__.__dict__
 
-        for field_name, field in self.__class__.__dict__.items():
-            if (
-                isinstance(field, (fields.DropdownField, fields.MultiselectField))
-                and to_save
-            ):
-                instance_fields[field_name] = None
-                if getattr(self, field_name) is not None:
-                    instance_fields[field_name] = self.__class__.__dict__[
-                        field_name
-                    ].get_to_save(self, None)
+        for field_name, field in model_attributes.items():
+            if isinstance(field, fields.Field):
+                field_instance = model_attributes[field_name]  # pylint: disable=unnecessary-dict-index-lookup
+                if (
+                    isinstance(field, (fields.DropdownField, fields.MultiselectField))
+                    and to_save
+                ):
+                    fields_dict[field_name] = None
+                    if getattr(self, field_name) is not None:
+                        fields_dict[field_name] = field_instance.get_to_save(self, None)
+                elif isinstance(field, fields.AttachmentField):
+                    field_instance.file.save()
+                    fields_dict[field_name] = (
+                        str(field_instance.file.id) if field_instance.file else None
+                    )
+                else:
+                    fields_dict[field_name] = getattr(self, field_name)
 
-            elif isinstance(field, fields.Field):
-                instance_fields[field_name] = getattr(self, field_name)
-            elif field_name in fields.DEFAULT_FIELDS:
-                instance_fields[field_name] = getattr(self, field_name)
-
-        return instance_fields
+        return fields_dict
 
     @classmethod
     def parse_record_fields(cls, **record_data):

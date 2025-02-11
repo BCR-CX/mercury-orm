@@ -17,6 +17,7 @@ from mercuryorm.exceptions import (
     InvalidRegexError,
     RegexCompileError,
 )
+from mercuryorm.file import FileManagerZendesk, AttachmentFile
 
 DEFAULT_FIELDS = [
     "id",
@@ -606,3 +607,64 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
 
     def __set__(self, instance: object, value: List[str] | None) -> None:
         super().__set__(instance, value)
+
+
+class AttachmentField(Field):
+    """
+    A field representing an attachment file.
+    """
+
+    def __init__(
+        self, name, *, file_manager=FileManagerZendesk
+    ):  # pylint: disable=super-init-not-called
+        """
+        Initialize an AttachmentField instance.
+        """
+        self.name = name
+        self.field_type = FieldTypes.TEXT
+
+        self._file_manager = file_manager
+        self.file = None
+
+    def __get__(self, instance: object, owner: type) -> AttachmentFile:
+        """
+        Get the value of the attachment field.
+
+        Args:
+            instance: The instance of the class.
+            owner: The class owning the instance.
+
+        Returns:
+            The value of the attachment field.
+        """
+        if instance is None:
+            return self
+        if self.file is None:
+            self.file = AttachmentFile(file_manager=self._file_manager)
+        return self.file
+
+    def __set__(self, instance: object, value: AttachmentFile | None) -> None:
+        """
+        Set the value of the attachment field.
+
+        Args:
+            instance: The instance of the class.
+            value: The value to set for the attachment field.
+
+        Raises:
+            ValueError: If the value is not an instance of AttachmentFile.
+        """
+        if value is not None:
+            if not isinstance(value, AttachmentFile):
+                raise ValueError("Attachment must be an instance of AttachmentFile")
+            self.file = value
+
+    def get_to_save(
+        self, instance: object, owner: type  # pylint: disable=unused-argument
+    ) -> str | None:
+        """
+        Return a value for saving.
+        """
+        if not self.file.saved:
+            self.file.save()
+        return self.file.id
