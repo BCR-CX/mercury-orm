@@ -38,11 +38,19 @@ class CustomObject:
         self.name = None
         for field_name, field in self.__class__.__dict__.items():
             if isinstance(field, fields.AttachmentField):
-                setattr(
-                    self,
-                    field_name,
-                    AttachmentFile(attachment_id=kwargs.get(field_name)),
-                )
+                file_field_value = kwargs.get(field_name)
+                if isinstance(file_field_value, AttachmentFile):
+                    setattr(
+                        self,
+                        field_name,
+                        file_field_value,
+                    )
+                elif isinstance(file_field_value, str):
+                    setattr(
+                        self,
+                        field_name,
+                        AttachmentFile(attachment_id=file_field_value),
+                    )
             elif isinstance(field, fields.Field):
                 setattr(self, field_name, kwargs.get(field_name))
 
