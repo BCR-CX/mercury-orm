@@ -218,7 +218,14 @@ class CustomObject:
 
         for field_name, field in instance.__class__.__dict__.items():
             if isinstance(field, fields.Field):
-                setattr(instance, field_name, custom_fields.get(field_name))
+                if isinstance(field, fields.AttachmentField):
+                    setattr(
+                        instance,
+                        field_name,
+                        AttachmentFile(attachment_id=custom_fields.get(field_name)),
+                    )
+                else:
+                    setattr(instance, field_name, custom_fields.get(field_name))
 
         for field in fields.DEFAULT_FIELDS:
             setattr(instance, field, record_data.get(field))
