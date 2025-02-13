@@ -30,7 +30,9 @@ class FileManagerZendesk:
         """
         return self._client.upload_file(filename, content)
 
-    def send_to_ticket(self, ticket_id: int, token: str, comment: str = "Anexo adicionado."):
+    def send_to_ticket(
+        self, ticket_id: int, token: str, comment: str = "Anexo adicionado."
+    ):
         """
         Sends the uploaded attachment to the given ticket.
         """
@@ -52,6 +54,7 @@ class AttachmentFile:
     """
     Class representing an attachment file.
     """
+
     def __init__(
         self,
         *,
