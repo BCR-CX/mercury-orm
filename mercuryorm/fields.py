@@ -464,17 +464,17 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
             raise InvalidChoiceError(self.name, value)
         return True
 
-    def get_to_save(self, instance: object, owner: type) -> str | None:
-        """Returns the selected value for saving."""
-        return super().__get__(instance, owner)
-
-    def __get__(self, instance: object, owner: type) -> str | None:
-        value = super().__get__(instance, owner)
+    def get_to_representation(self, instance: object, owner: type) -> str | None:
+        """Returns the selected value for representation."""
+        value: str = super().__get__(instance, owner)
         if value is None:
             return None
         if self.to_representation:
-            return self.to_representation[value]
+            value = self.to_representation[value]
         return value
+
+    def __get__(self, instance: object, owner: type) -> str | None:
+        return super().__get__(instance, owner)
 
 
 class LookupField(Field):  # pylint: disable=too-few-public-methods
@@ -593,17 +593,17 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
                 raise InvalidChoiceError(self.name, item)
         return True
 
-    def get_to_save(self, instance: object, owner: type) -> list[str] | None:
-        """Returns the list of selected values for saving."""
-        return super().__get__(instance, owner)
-
-    def __get__(self, instance: object, owner: type) -> List[str] | None:
+    def get_to_representation(self, instance: object, owner: type) -> list[str] | None:
+        """Returns the list of selected values for representation."""
         value: list[str] = super().__get__(instance, owner)
         if value is None:
             return None
         if self.to_representation:
-            return [self.to_representation[item] for item in value]
+            value = [self.to_representation[item] for item in value]
         return value
+
+    def __get__(self, instance: object, owner: type) -> List[str] | None:
+        return super().__get__(instance, owner)
 
     def __set__(self, instance: object, value: List[str] | None) -> None:
         super().__set__(instance, value)
@@ -622,26 +622,24 @@ class AttachmentField(Field):
         """
         self.name = name
         self.field_type = FieldTypes.TEXT
+        self.data_type = AttachmentFile
 
         self._file_manager = file_manager
-        self.file = None
 
-    def __get__(self, instance: object, owner: type) -> AttachmentFile:
-        """
-        Get the value of the attachment field.
+    def get_to_representation(self, instance: object, owner: type) -> dict | None:
+        """Returns the selected value for representation."""
+        value: AttachmentFile = super().__get__(instance, owner)
+        if value is None:
+            return None
+        return {
+            "id": str(value.id),
+            "filename": value.filename,
+            "url": value.url,
+            "size": value.size,
+        }
 
-        Args:
-            instance: The instance of the class.
-            owner: The class owning the instance.
-
-        Returns:
-            The value of the attachment field.
-        """
-        if instance is None:
-            return self
-        if self.file is None:
-            self.file = AttachmentFile(file_manager=self._file_manager)
-        return self.file
+    def __get__(self, instance: object, owner: type) -> AttachmentFile | None:
+        return super().__get__(instance, owner)
 
     def __set__(self, instance: object, value: AttachmentFile | None) -> None:
         """
@@ -654,17 +652,6 @@ class AttachmentField(Field):
         Raises:
             ValueError: If the value is not an instance of AttachmentFile.
         """
-        if value is not None:
-            if not isinstance(value, AttachmentFile):
-                raise ValueError("Attachment must be an instance of AttachmentFile")
-            self.file = value
-
-    def get_to_save(
-        self, instance: object, owner: type  # pylint: disable=unused-argument
-    ) -> str | None:
-        """
-        Return a value for saving.
-        """
-        if not self.file.saved:
-            self.file.save()
-        return self.file.id
+        if not self.validate(value):
+            raise FieldTypeError(self.name, self.data_type)
+        instance.__dict__[self.name] = value
