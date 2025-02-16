@@ -72,15 +72,12 @@ class AttachmentFile:
         self.saved = False
         self._content = content
         self.file_manager = file_manager
+        self.zendesk_data = None
 
         self._filename = filename or str(uuid.uuid4())
 
-        if attachment_id:
-            self.zendesk_data = self._get_attachment_details(attachment_id)
-            self.saved = True
-        elif content:
-            if save_fast:
-                self.save()
+        if content and save_fast:
+            self.save()
 
     def __bool__(self) -> bool:
         return bool(self.id or self.content)
@@ -113,36 +110,41 @@ class AttachmentFile:
         """
         Attachment ID.
         """
-        if not hasattr(self, "zendesk_data"):
+        if not getattr(self, "zendesk_data"):
             return self._id
         return self.zendesk_data["id"]
 
     @property
-    def filename(self) -> str:
+    def filename(self) -> str | None:
         """
         Attachment filename.
         """
         return self._get_zendesk_data_value("file_name")
 
     @property
-    def url(self) -> str:
+    def url(self) -> str | None:
         """
         Attachment URL.
         """
         return self._get_zendesk_data_value("content_url")
 
     @property
-    def size(self) -> int:
+    def size(self) -> int | None:
         """
         Attachment size in KB.
         """
         return self._get_zendesk_data_value("size")
 
-    def _get_zendesk_data_value(self, key: str) -> dict:
+    def _get_zendesk_data_value(self, key: str) -> int | str | None:
         """
         Get a value from the zendesk_data dictionary.
         """
-        if self.saved and hasattr(self, "zendesk_data"):
+        if not self._id:
+            return None
+        if not getattr(self, "zendesk_data"):
+            self.zendesk_data = self._get_attachment_details(self._id)
+            self.saved = True
+        if self.saved and getattr(self, "zendesk_data"):
             return self.zendesk_data[key]
         raise ValueError("File not saved yet, to save use save() method.")
 
