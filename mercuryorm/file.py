@@ -75,12 +75,8 @@ class AttachmentFile:
 
         self._filename = filename or str(uuid.uuid4())
 
-        if attachment_id:
-            self.zendesk_data = self._get_attachment_details(attachment_id)
-            self.saved = True
-        elif content:
-            if save_fast:
-                self.save()
+        if content and save_fast:
+            self.save()
 
     def __bool__(self) -> bool:
         return bool(self.id or self.content)
@@ -118,30 +114,35 @@ class AttachmentFile:
         return self.zendesk_data["id"]
 
     @property
-    def filename(self) -> str:
+    def filename(self) -> str | None:
         """
         Attachment filename.
         """
         return self._get_zendesk_data_value("file_name")
 
     @property
-    def url(self) -> str:
+    def url(self) -> str | None:
         """
         Attachment URL.
         """
         return self._get_zendesk_data_value("content_url")
 
     @property
-    def size(self) -> int:
+    def size(self) -> int | None:
         """
         Attachment size in KB.
         """
         return self._get_zendesk_data_value("size")
 
-    def _get_zendesk_data_value(self, key: str) -> dict:
+    def _get_zendesk_data_value(self, key: str) -> int | str | None:
         """
         Get a value from the zendesk_data dictionary.
         """
+        if not self._id:
+            return None
+        if not hasattr(self, "zendesk_data"):
+            self.zendesk_data = self._get_attachment_details(self._id)
+            self.saved = True
         if self.saved and hasattr(self, "zendesk_data"):
             return self.zendesk_data[key]
         raise ValueError("File not saved yet, to save use save() method.")
