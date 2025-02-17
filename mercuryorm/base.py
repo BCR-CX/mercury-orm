@@ -37,21 +37,7 @@ class CustomObject:
         self.id = None  # pylint: disable=invalid-name
         self.name = None
         for field_name, field in self.__class__.__dict__.items():
-            if isinstance(field, fields.AttachmentField):
-                file_field_value = kwargs.get(field_name)
-                if isinstance(file_field_value, AttachmentFile):
-                    setattr(
-                        self,
-                        field_name,
-                        file_field_value,
-                    )
-                elif isinstance(file_field_value, str):
-                    setattr(
-                        self,
-                        field_name,
-                        AttachmentFile(attachment_id=file_field_value),
-                    )
-            elif isinstance(field, fields.Field):
+            if isinstance(field, fields.Field):
                 setattr(self, field_name, kwargs.get(field_name))
 
     def __str__(self):
@@ -147,6 +133,15 @@ class CustomObject:
 
         return response
 
+    def to_save(self):
+        """
+        Converts the current object to a dictionary format for saving in Zendesk.
+
+        Returns:
+            dict: A dictionary containing the object's fields and values.
+        """
+        return self._format_fields(to_save=True)
+
     def to_dict(self):
         """
         Converts the current object to a dictionary format, including custom fields and
@@ -157,24 +152,26 @@ class CustomObject:
         """
         return self._format_fields()
 
-    def to_save(self):
+    def to_representation(self):
         """
-        Converts the current object to a dictionary format for saving in Zendesk,
-        including custom fields and default fields required by the API.
+        Converts the current object to a dictionary format for representation, using labels.
 
         Returns:
-            dict: A dictionary containing the object's
-            fields and values to save on Zendesk.
+            dict: A dictionary containing the object's fields and values.
+            in choice fields return {value: value, label: label}
         """
-        return self._format_fields(to_save=True)
+        return self._format_fields(to_representation=True)
 
-    def _format_fields(self, to_save: bool = False) -> dict:
+    def _format_fields(
+        self, to_representation: bool = False, to_save: bool = False
+    ) -> dict:
         """
         Formats the fields of the object to be sent to the API.
 
         Args:
-            to_save (bool, optional): If True, the method will format the fields for saving
-                in Zendesk. If False, it will format the fields for conversion to a dictionary.
+            to_representation (bool, optional): If True, the method will format the fields
+            for representation in Zendesk. If False, it will format the fields
+            for conversion to a dictionary.
 
         Returns:
             dict: A dictionary containing the object's fields and values.
@@ -184,19 +181,30 @@ class CustomObject:
 
         for field_name, field in model_attributes.items():
             if isinstance(field, fields.Field):
-                field_instance = model_attributes[field_name]  # pylint: disable=unnecessary-dict-index-lookup
                 if (
-                    isinstance(field, (fields.DropdownField, fields.MultiselectField))
-                    and to_save
+                    isinstance(
+                        field,
+                        (
+                            fields.DropdownField,
+                            fields.MultiselectField,
+                            fields.AttachmentField,
+                        ),
+                    )
+                    and to_representation
                 ):
                     fields_dict[field_name] = None
                     if getattr(self, field_name) is not None:
-                        fields_dict[field_name] = field_instance.get_to_save(self, None)
-                elif isinstance(field, fields.AttachmentField):
-                    field_instance.file.save()
-                    fields_dict[field_name] = (
-                        str(field_instance.file.id) if field_instance.file else None
-                    )
+                        fields_dict[field_name] = field.get_to_representation(
+                            self, None
+                        )
+                elif (
+                    isinstance(field, fields.AttachmentField)
+                    and to_save
+                    and getattr(self, field_name) is not None
+                ):
+                    field_instance = getattr(self, field_name)
+                    field_instance.save()
+                    fields_dict[field_name] = str(field_instance.id)
                 else:
                     fields_dict[field_name] = getattr(self, field_name)
 
