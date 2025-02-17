@@ -110,7 +110,7 @@ class AttachmentFile:
         """
         Attachment ID.
         """
-        if not getattr(self, "zendesk_data"):
+        if not self.zendesk_data:
             return self._id
         return self.zendesk_data["id"]
 
@@ -141,10 +141,10 @@ class AttachmentFile:
         """
         if not self._id:
             return None
-        if not getattr(self, "zendesk_data"):
+        if not self.zendesk_data:
             self.zendesk_data = self._get_attachment_details(self._id)
             self.saved = True
-        if self.saved and getattr(self, "zendesk_data"):
+        if self.saved and self.zendesk_data:
             return self.zendesk_data[key]
         raise ValueError("File not saved yet, to save use save() method.")
 
