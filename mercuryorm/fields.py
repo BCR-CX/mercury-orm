@@ -470,8 +470,8 @@ class DropdownField(Field):  # pylint: disable=too-few-public-methods
         if value is None:
             return None
         if self.to_representation:
-            value = self.to_representation[value]
-        return value
+            return {"value": value, "label": self.to_representation[value]}
+        return {"value": value, "label": value}
 
     def __get__(self, instance: object, owner: type) -> str | None:
         return super().__get__(instance, owner)
@@ -599,8 +599,10 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
         if value is None:
             return None
         if self.to_representation:
-            value = [self.to_representation[item] for item in value]
-        return value
+            return [
+                {"value": item, "label": self.to_representation[item]} for item in value
+            ]
+        return [{"value": item, "label": item} for item in value]
 
     def __get__(self, instance: object, owner: type) -> List[str] | None:
         return super().__get__(instance, owner)
@@ -642,16 +644,4 @@ class AttachmentField(Field):
         return super().__get__(instance, owner)
 
     def __set__(self, instance: object, value: AttachmentFile | None) -> None:
-        """
-        Set the value of the attachment field.
-
-        Args:
-            instance: The instance of the class.
-            value: The value to set for the attachment field.
-
-        Raises:
-            ValueError: If the value is not an instance of AttachmentFile.
-        """
-        if not self.validate(value):
-            raise FieldTypeError(self.name, self.data_type)
-        instance.__dict__[self.name] = value
+        super().__set__(instance, value)

@@ -133,6 +133,15 @@ class CustomObject:
 
         return response
 
+    def to_save(self):
+        """
+        Converts the current object to a dictionary format for saving in Zendesk.
+
+        Returns:
+            dict: A dictionary containing the object's fields and values.
+        """
+        return self._format_fields(to_save=True)
+
     def to_dict(self):
         """
         Converts the current object to a dictionary format, including custom fields and
@@ -141,20 +150,21 @@ class CustomObject:
         Returns:
             dict: A dictionary containing the object's fields and values.
         """
-        return self._format_fields(to_representation=True)
-
-    def to_save(self):
-        """
-        Converts the current object to a dictionary format for saving in Zendesk,
-        including custom fields and default fields required by the API.
-
-        Returns:
-            dict: A dictionary containing the object's
-            fields and values to save on Zendesk.
-        """
         return self._format_fields()
 
-    def _format_fields(self, to_representation: bool = False) -> dict:
+    def to_representation(self):
+        """
+        Converts the current object to a dictionary format for representation, using labels.
+
+        Returns:
+            dict: A dictionary containing the object's fields and values.
+            in choice fields return {value: value, label: label}
+        """
+        return self._format_fields(to_representation=True)
+
+    def _format_fields(
+        self, to_representation: bool = False, to_save: bool = False
+    ) -> dict:
         """
         Formats the fields of the object to be sent to the API.
 
@@ -189,7 +199,7 @@ class CustomObject:
                         )
                 elif (
                     isinstance(field, fields.AttachmentField)
-                    and not to_representation
+                    and to_save
                     and getattr(self, field_name) is not None
                 ):
                     field_instance = getattr(self, field_name)
