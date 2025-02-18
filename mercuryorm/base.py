@@ -74,6 +74,7 @@ class CustomObject:
                     if not self.is_namefield_autoincrement()
                     else None
                 ),
+                "id": getattr(self, "id", None),
                 "external_id": getattr(self, "external_id", None),
             }
         }
