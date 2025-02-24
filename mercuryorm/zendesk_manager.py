@@ -241,7 +241,7 @@ class ZendeskObjectManager:
         endpoint = "/custom_objects"
         return self.client.get(endpoint).get("custom_objects", [])
 
-    def create_custom_object_from_model(self, model):
+    def create_custom_object_from_model(self, model):  # pylint: disable=too-many-locals
         """
         Creates a Custom Object and its fields based on the provided template/model.
         Args:
@@ -264,38 +264,71 @@ class ZendeskObjectManager:
 
         existing_fields = self.list_custom_object_fields(custom_object_key)
 
-        for field_name, field in model.__dict__.items():
+        for field_name, field in model.__dict__.items():  # pylint: disable=too-many-nested-blocks
             if isinstance(field, fields.Field):
                 title = field.name if hasattr(field, "name") else field_name
                 if field_name not in existing_fields:
-                    choices = getattr(field, "choices", None)
-                    is_custom_object = getattr(field, "is_custom_object", None)
-                    pattern = getattr(field, "pattern", None)
-                    related_object = getattr(field, "related_object", None)
-                    response = self.create_custom_object_field(
-                        custom_object_key=custom_object_key,
-                        field_type=field.field_type,
-                        key=field_name,
-                        title=title,
-                        choices=choices,
-                        pattern=pattern,
-                        is_custom_object=is_custom_object,
-                        related_object=related_object,
-                    )
-                    if response.get("status_code", 201) != 201:
-                        error = (
-                            response.get("details", {})
-                            .get("key", [{}])[0]
-                            .get("description", "Unknown error")
+                    if isinstance(field, fields.AttachmentField):
+                        extra_fields = (
+                            (f"{field_name}_id", fields.FieldTypes.INTEGER),
+                            (f"{field_name}_filename", fields.FieldTypes.TEXT),
+                            (f"{field_name}_url", fields.FieldTypes.TEXT),
+                            (f"{field_name}_size", fields.FieldTypes.INTEGER),
                         )
-                        raise CustomObjectFieldCreationError(
-                            f"Error creating field '{field_name}': {error}"
+                        for extra_field, type_field in extra_fields:
+                            response = self.create_custom_object_field(
+                                custom_object_key=custom_object_key,
+                                field_type=type_field,
+                                key=extra_field,
+                                title=extra_field,
+                                choices=None,
+                                pattern=None,
+                                is_custom_object=None,
+                                related_object=None,
+                            )
+                            if response.get("status_code", 201) != 201:
+                                error = (
+                                    response.get("details", {})
+                                    .get("key", [{}])[0]
+                                    .get("description", "Unknown error")
+                                )
+                                raise CustomObjectFieldCreationError(
+                                    f"Error creating field '{extra_field}': {error}"
+                                )
+                            logging.info(
+                                "Field '%s' created for Custom Object '%s'.",
+                                extra_field,
+                                custom_object_key,
+                            )
+                    else:
+                        choices = getattr(field, "choices", None)
+                        pattern = getattr(field, "pattern", None)
+                        is_custom_object = getattr(field, "is_custom_object", None)
+                        related_object = getattr(field, "related_object", None)
+                        response = self.create_custom_object_field(
+                            custom_object_key=custom_object_key,
+                            field_type=field.field_type,
+                            key=field_name,
+                            title=title,
+                            choices=choices,
+                            pattern=pattern,
+                            is_custom_object=is_custom_object,
+                            related_object=related_object,
                         )
-                    logging.info(
-                        "Field '%s' created for Custom Object '%s'.",
-                        field_name,
-                        custom_object_key,
-                    )
+                        if response.get("status_code", 201) != 201:
+                            error = (
+                                response.get("details", {})
+                                .get("key", [{}])[0]
+                                .get("description", "Unknown error")
+                            )
+                            raise CustomObjectFieldCreationError(
+                                f"Error creating field '{field_name}': {error}"
+                            )
+                        logging.info(
+                            "Field '%s' created for Custom Object '%s'.",
+                            field_name,
+                            custom_object_key,
+                        )
             if isinstance(field, fields.NameField):
                 self.update_custom_object_name(
                     custom_object_key=custom_object_key,
@@ -311,7 +344,7 @@ class ZendeskObjectManager:
                     custom_object_key,
                 )
 
-    def get_or_create_custom_object_from_model(self, model):
+    def get_or_create_custom_object_from_model(self, model):  # pylint: disable=too-many-locals
         """
         Checks if the Custom Object already exists and creates missing fields.
         Args:
@@ -330,38 +363,71 @@ class ZendeskObjectManager:
 
         existing_fields = self.list_custom_object_fields(custom_object_key)
 
-        for field_name, field in model.__dict__.items():
+        for field_name, field in model.__dict__.items():  # pylint: disable=too-many-nested-blocks
             if isinstance(field, fields.Field):
                 title = field.name if hasattr(field, "name") else field_name
                 if field_name not in existing_fields:
-                    choices = getattr(field, "choices", None)
-                    pattern = getattr(field, "pattern", None)
-                    is_custom_object = getattr(field, "is_custom_object", None)
-                    related_object = getattr(field, "related_object", None)
-                    response = self.create_custom_object_field(
-                        custom_object_key=custom_object_key,
-                        field_type=field.field_type,
-                        key=field_name,
-                        title=title,
-                        choices=choices,
-                        pattern=pattern,
-                        is_custom_object=is_custom_object,
-                        related_object=related_object,
-                    )
-                    if response.get("status_code", 201) != 201:
-                        error = (
-                            response.get("details", {})
-                            .get("key", [{}])[0]
-                            .get("description", "Unknown error")
+                    if isinstance(field, fields.AttachmentField):
+                        extra_fields = (
+                            (f"{field_name}_id", fields.FieldTypes.INTEGER),
+                            (f"{field_name}_filename", fields.FieldTypes.TEXT),
+                            (f"{field_name}_url", fields.FieldTypes.TEXT),
+                            (f"{field_name}_size", fields.FieldTypes.INTEGER),
                         )
-                        raise CustomObjectFieldCreationError(
-                            f"Error creating field '{field_name}': {error}"
+                        for extra_field, type_field in extra_fields:
+                            response = self.create_custom_object_field(
+                                custom_object_key=custom_object_key,
+                                field_type=type_field,
+                                key=extra_field,
+                                title=extra_field,
+                                choices=None,
+                                pattern=None,
+                                is_custom_object=None,
+                                related_object=None,
+                            )
+                            if response.get("status_code", 201) != 201:
+                                error = (
+                                    response.get("details", {})
+                                    .get("key", [{}])[0]
+                                    .get("description", "Unknown error")
+                                )
+                                raise CustomObjectFieldCreationError(
+                                    f"Error creating field '{extra_field}': {error}"
+                                )
+                            logging.info(
+                                "Field '%s' created for Custom Object '%s'.",
+                                field_name,
+                                custom_object_key,
+                            )
+                    else:
+                        choices = getattr(field, "choices", None)
+                        pattern = getattr(field, "pattern", None)
+                        is_custom_object = getattr(field, "is_custom_object", None)
+                        related_object = getattr(field, "related_object", None)
+                        response = self.create_custom_object_field(
+                            custom_object_key=custom_object_key,
+                            field_type=field.field_type,
+                            key=field_name,
+                            title=title,
+                            choices=choices,
+                            pattern=pattern,
+                            is_custom_object=is_custom_object,
+                            related_object=related_object,
                         )
-                    logging.info(
-                        "Field '%s' created for Custom Object '%s'.",
-                        field_name,
-                        custom_object_key,
-                    )
+                        if response.get("status_code", 201) != 201:
+                            error = (
+                                response.get("details", {})
+                                .get("key", [{}])[0]
+                                .get("description", "Unknown error")
+                            )
+                            raise CustomObjectFieldCreationError(
+                                f"Error creating field '{field_name}': {error}"
+                            )
+                        logging.info(
+                            "Field '%s' created for Custom Object '%s'.",
+                            field_name,
+                            custom_object_key,
+                        )
             if isinstance(field, fields.NameField):
                 self.update_custom_object_name(
                     custom_object_key=custom_object_key,

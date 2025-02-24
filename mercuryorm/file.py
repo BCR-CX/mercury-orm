@@ -50,7 +50,7 @@ class FileManagerZendesk:
         )
 
 
-class AttachmentFile:
+class AttachmentFile:  # pylint: disable=too-many-instance-attributes
     """
     Class representing an attachment file.
     """
@@ -58,26 +58,33 @@ class AttachmentFile:
     def __init__(
         self,
         *,
-        filename: Optional[str] = None,
         attachment_id: Optional[str] = None,
+        attachment_url: Optional[str] = None,
+        attachment_size: Optional[int] = None,
+        attachment_filename: Optional[str] = None,
         content: Optional[bytes] = None,
         save_fast: Optional[bool] = False,
-        file_manager: FileManagerZendesk = FileManagerZendesk
+        file_manager: FileManagerZendesk = FileManagerZendesk,
     ):
         """
         Initialize an AttachmentFile instance.
         """
-
-        self._id = attachment_id
-        self.saved = False
+        self._attachment_id = attachment_id
+        self._attachment_url = attachment_url
+        self._attachment_size = attachment_size
+        self._attachment_filename = attachment_filename or str(uuid.uuid4())
         self._content = content
         self.file_manager = file_manager
         self.zendesk_data = None
+        self.saved = False
 
-        self._filename = filename or str(uuid.uuid4())
+        if attachment_id:
+            self.saved = True
 
-        if content and save_fast:
-            self.save()
+        if content:
+            self.saved = False
+            if save_fast:
+                self.save()
 
     def __bool__(self) -> bool:
         return bool(self.id or self.content)
@@ -86,7 +93,7 @@ class AttachmentFile:
         """
         String representation of the AttachmentFile instance.
         """
-        return str(self.id)
+        return f"AttachmentFile(id={self.id}, filename={self.filename}, saved={self.saved})"
 
     @property
     def content(self) -> bytes:
@@ -110,43 +117,28 @@ class AttachmentFile:
         """
         Attachment ID.
         """
-        if not self.zendesk_data:
-            return self._id
-        return self.zendesk_data["id"]
+        return self._attachment_id
 
     @property
     def filename(self) -> str | None:
         """
         Attachment filename.
         """
-        return self._get_zendesk_data_value("file_name")
+        return self._attachment_filename
 
     @property
     def url(self) -> str | None:
         """
         Attachment URL.
         """
-        return self._get_zendesk_data_value("content_url")
+        return self._attachment_url
 
     @property
     def size(self) -> int | None:
         """
         Attachment size in KB.
         """
-        return self._get_zendesk_data_value("size")
-
-    def _get_zendesk_data_value(self, key: str) -> int | str | None:
-        """
-        Get a value from the zendesk_data dictionary.
-        """
-        if not self._id:
-            return None
-        if not self.zendesk_data:
-            self.zendesk_data = self._get_attachment_details(self._id)
-            self.saved = True
-        if self.saved and self.zendesk_data:
-            return self.zendesk_data[key]
-        raise ValueError("File not saved yet, to save use save() method.")
+        return self._attachment_size
 
     def _upload_attachment(self, filename: str, content: bytes) -> dict:
         """
@@ -164,13 +156,6 @@ class AttachmentFile:
         response = self.file_manager().send_to_ticket(ticket_id, token, comment)
         return response
 
-    def _get_attachment_details(self, attachment_id: str) -> dict:
-        """
-        Gets the details of a specific attachment.
-        """
-        response = self.file_manager().get_attachment_details(attachment_id)
-        return response["attachment"]
-
     def save(self) -> None:
         """
         Save the file to Zendesk.
@@ -178,8 +163,11 @@ class AttachmentFile:
         if not self.saved:
             if not isinstance(self.content, bytes):
                 raise ValueError("Content attribute must be of type bytes.")
-            upload_data = self._upload_attachment(self._filename, self.content)
-            self.zendesk_data = upload_data["attachment"]
+            upload_data = self._upload_attachment(self.filename, self.content)
+            self._attachment_id = upload_data["attachment"]["id"]
+            self._attachment_filename = upload_data["attachment"]["file_name"]
+            self._attachment_url = upload_data["attachment"]["content_url"]
+            self._attachment_size = upload_data["attachment"]["size"]
             self.token = upload_data["token"]
             self.saved = True
 
