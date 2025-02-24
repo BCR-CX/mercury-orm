@@ -31,6 +31,10 @@ class CustomObject:
         """
         super().__init_subclass__(**kwargs)
         cls.objects = RecordManager(cls)
+        for attr_name, attr_value in cls.__dict__.items():
+            if isinstance(attr_value, fields.Field):
+                attr_value.name = attr_name
+                attr_value.contribute_to_class(cls, attr_name)
 
     def __init__(self, **kwargs):
         self.client = ZendeskAPIClient()
@@ -204,8 +208,17 @@ class CustomObject:
                     and getattr(self, field_name) is not None
                 ):
                     field_instance = getattr(self, field_name)
-                    field_instance.save()
-                    fields_dict[field_name] = str(field_instance.id)
+                    ticket_field_name = field.ticket_field_name
+                    ticket_id = getattr(self, ticket_field_name)
+                    if ticket_id is None:
+                        raise ValueError(
+                            f"Ticket ID field '{ticket_field_name}' not found."
+                        )
+                    field_instance.save_with_ticket(ticket_id, "Attachment")
+                    fields_dict[f"{field_name}_id"] = field_instance.id
+                    fields_dict[f"{field_name}_url"] = field_instance.url
+                    fields_dict[f"{field_name}_filename"] = field_instance.filename
+                    fields_dict[f"{field_name}_size"] = field_instance.size
                 else:
                     fields_dict[field_name] = getattr(self, field_name)
 
@@ -228,10 +241,19 @@ class CustomObject:
         for field_name, field in instance.__class__.__dict__.items():
             if isinstance(field, fields.Field):
                 if isinstance(field, fields.AttachmentField):
+                    attach_id = custom_fields.get(f"{field_name}_id", None)
+                    attach_url = custom_fields.get(f"{field_name}_url", None)
+                    attach_filename = custom_fields.get(f"{field_name}_filename", None)
+                    attach_size = custom_fields.get(f"{field_name}_size", None)
                     setattr(
                         instance,
                         field_name,
-                        AttachmentFile(attachment_id=custom_fields.get(field_name)),
+                        AttachmentFile(
+                            attachment_id=attach_id,
+                            attachment_filename=attach_filename,
+                            attachment_url=attach_url,
+                            attachment_size=attach_size,
+                        ),
                     )
                 else:
                     setattr(instance, field_name, custom_fields.get(field_name))

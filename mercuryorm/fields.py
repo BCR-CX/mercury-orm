@@ -89,6 +89,11 @@ class Field:  # pylint: disable=too-few-public-methods
         self.field_type = field_type
         self.data_type = data_type
 
+    def contribute_to_class(self, cls, name):
+        """
+        Method to add custom attributes to a class.
+        """
+
     def validate(self, value: Any) -> bool:
         """
         Validate the value of the field.
@@ -611,21 +616,21 @@ class MultiselectField(Field):  # pylint: disable=too-few-public-methods
         super().__set__(instance, value)
 
 
-class AttachmentField(Field):
+class AttachmentField(Field):  # pylint: disable=too-many-instance-attributes
     """
     A field representing an attachment file.
     """
 
     def __init__(
-        self, name, *, file_manager=FileManagerZendesk
+        self, field_name, *, ticket_field_name, file_manager=FileManagerZendesk
     ):  # pylint: disable=super-init-not-called
         """
         Initialize an AttachmentField instance.
         """
-        self.name = name
+        self.field_name = field_name
         self.field_type = FieldTypes.TEXT
         self.data_type = AttachmentFile
-
+        self.ticket_field_name = ticket_field_name
         self._file_manager = file_manager
 
     def get_to_representation(self, instance: object, owner: type) -> dict | None:
@@ -640,8 +645,47 @@ class AttachmentField(Field):
             "size": value.size,
         }
 
-    def __get__(self, instance: object, owner: type) -> AttachmentFile | None:
-        return super().__get__(instance, owner)
+    def contribute_to_class(self, cls, name):
+        self.model_file_attribute_name = f"__{name}_file"  # pylint: disable=attribute-defined-outside-init
+        self.id_field_name = f"{name}_id"  # pylint: disable=attribute-defined-outside-init
+        self.url_field_name = f"{name}_url"  # pylint: disable=attribute-defined-outside-init
+        self.filename_field_name = f"{name}_filename"  # pylint: disable=attribute-defined-outside-init
+        self.size_field_name = f"{name}_size"  # pylint: disable=attribute-defined-outside-init
 
-    def __set__(self, instance: object, value: AttachmentFile | None) -> None:
-        super().__set__(instance, value)
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        if not hasattr(instance, self.model_file_attribute_name):
+            attach_id = getattr(instance, self.id_field_name, None)
+            attach_url = getattr(instance, self.url_field_name, None)
+            attach_filename = getattr(instance, self.filename_field_name, None)
+            attach_size = getattr(instance, self.size_field_name, None)
+
+            if not attach_id:
+                return None
+
+            setattr(
+                instance,
+                self.model_file_attribute_name,
+                AttachmentFile(
+                    attachment_id=attach_id,
+                    attachment_url=attach_url,
+                    attachment_size=attach_size,
+                    attachment_filename=attach_filename,
+                ),
+            )
+        return getattr(instance, self.model_file_attribute_name)
+
+    def __set__(self, instance, value):
+        if value is not None:
+            if isinstance(value, AttachmentFile):
+                setattr(instance, self.model_file_attribute_name, value)
+                setattr(instance, self.id_field_name, value.id)
+                setattr(instance, self.url_field_name, value.url)
+                setattr(instance, self.filename_field_name, value.filename)
+                setattr(instance, self.size_field_name, value.size)
+            else:
+                raise ValueError(
+                    "AttachmentField only accepts AttachmentFile instances."
+                )
