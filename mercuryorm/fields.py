@@ -4,6 +4,7 @@ This module defines different types of fields that can be used
 to represent and manage data within custom objects.
 """
 
+from datetime import datetime, timezone
 from enum import Enum
 import re
 from typing import Any, List, Tuple
@@ -689,3 +690,49 @@ class AttachmentField(Field):  # pylint: disable=too-many-instance-attributes
                 raise ValueError(
                     "AttachmentField only accepts AttachmentFile instances."
                 )
+
+
+class DateTimeField(Field):
+    """
+    A field representing date and time information.
+
+    This field stores a complete datetime object, handling both date and time components.
+    It inherits from Field and uses the datetime type from the datetime module.
+    """
+
+    def __init__(self, name: str):
+        """
+        Initialize a DateTimeField instance.
+        """
+        super().__init__(name, FieldTypes.TEXT, datetime)
+
+    def contribute_to_class(self, cls, name):
+        """
+        Fields names for date and time components.
+        """
+        self.date = name # pylint: disable=attribute-defined-outside-init
+        self.time = f"{name}_time" # pylint: disable=attribute-defined-outside-init
+
+    def __set__(self, instance: object, value: datetime | None) -> None:
+        if not self.validate(value):
+            raise FieldTypeError(self.name, self.data_type)
+
+        if value is not None:
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+
+            date_str, time_str = value.isoformat().split("T")
+            instance.__dict__[self.date] = date_str
+            instance.__dict__[self.time] = time_str
+
+    def __get__(self, instance: object, owner: type) -> datetime | None:
+        if instance is None:
+            return None
+
+        date_str = instance.__dict__.get(self.date, None)
+        time_str = instance.__dict__.get(self.time, None)
+
+        if not date_str or not time_str:
+            return None
+
+        return datetime.strptime(f"{date_str}T{time_str}", "%Y-%m-%dT%H:%M:%S.%f%z")

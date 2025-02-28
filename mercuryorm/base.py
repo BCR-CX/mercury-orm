@@ -219,6 +219,15 @@ class CustomObject:
                     fields_dict[f"{field_name}_url"] = field_instance.url
                     fields_dict[f"{field_name}_filename"] = field_instance.filename
                     fields_dict[f"{field_name}_size"] = field_instance.size
+                elif (
+                    isinstance(field, fields.DateTimeField)
+                    and to_save
+                    and getattr(self, field_name)
+                ):
+                    field_instance = getattr(self, field_name)
+                    date_str, time_str = field_instance.isoformat().split("T")
+                    fields_dict[field_name] = date_str
+                    fields_dict[f"{field_name}_time"] = time_str
                 else:
                     fields_dict[field_name] = getattr(self, field_name)
 
