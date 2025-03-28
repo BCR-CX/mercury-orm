@@ -240,13 +240,26 @@ class QuerySet:
         responses = []
 
         while True:
+            if action == BulkActions.DELETE:
+                items = [
+                    record.format_record()["custom_object_record"]["id"]
+                    for record in records[start:end]
+                ]
+            elif action == BulkActions.DELETE_BY_EXTERNAL_ID:
+                items = [
+                    record.format_record()["custom_object_record"]["external_id"]
+                    for record in records[start:end]
+                ]
+            else:
+                items = [
+                    record.format_record()["custom_object_record"]
+                    for record in records[start:end]
+                ]
+
             data = {
                 "job": {
                     "action": action.value,
-                    "items": [
-                        record.format_record()["custom_object_record"]
-                        for record in records[start:end]
-                    ],
+                    "items": items,
                 }
             }
 
