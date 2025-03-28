@@ -735,4 +735,4 @@ class DateTimeField(Field):
         if not date_str or not time_str:
             return None
 
-        return datetime.strptime(f"{date_str}T{time_str}", "%Y-%m-%dT%H:%M:%S.%f%z")
+        return datetime.fromisoformat(f"{date_str}T{time_str}")

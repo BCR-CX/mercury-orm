@@ -3,6 +3,7 @@ Module for handling CustomObject base functionality, including saving, deleting,
 and managing fields for integration with Zendesk API.
 """
 
+from datetime import datetime
 from mercuryorm import fields
 from mercuryorm.client.connection import ZendeskAPIClient
 from mercuryorm.exceptions import (
@@ -264,6 +265,16 @@ class CustomObject:
                             attachment_size=attach_size,
                         ),
                     )
+                if isinstance(field, fields.DateTimeField):
+                    date_str = custom_fields.get(field_name, None)
+                    time_str = custom_fields.get(f"{field_name}_time", None)
+                    if date_str and time_str:
+                        date_str = date_str.split("T")[0]
+                        setattr(
+                            instance,
+                            field_name,
+                            datetime.fromisoformat(f"{date_str}T{time_str}"),
+                        )
                 else:
                     setattr(instance, field_name, custom_fields.get(field_name))
 
