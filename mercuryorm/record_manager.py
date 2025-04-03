@@ -190,16 +190,16 @@ class Bulk:
                     f"Every Record will contain the field: '{field}'."
                 )
 
-    def create(self, records: list):
+    def create(self, records: list, wait_to_complete: bool = True):
         """
         Creates multiple records in bulk.
 
         Args:
             records (list[CustomObject]): A list of records to create.
         """
-        return self.queryset.bulk(records, BulkActions.CREATE)
+        return self.queryset.bulk(records, BulkActions.CREATE, wait_to_complete)
 
-    def update(self, records: list):
+    def update(self, records: list, wait_to_complete: bool = True):
         """
         Updates multiple records in bulk.
 
@@ -207,9 +207,9 @@ class Bulk:
             records (list[CustomObject]): A list of records to update.
         """
         self._validate("id", records)
-        return self.queryset.bulk(records, BulkActions.UPDATE)
+        return self.queryset.bulk(records, BulkActions.UPDATE, wait_to_complete)
 
-    def delete(self, records: list):
+    def delete(self, records: list, wait_to_complete: bool = False):
         """
         Deletes multiple records in bulk.
 
@@ -217,9 +217,9 @@ class Bulk:
             records (list[CustomObject]): A list of records to delete.
         """
         self._validate("id", records)
-        return self.queryset.bulk(records, BulkActions.DELETE)
+        return self.queryset.bulk(records, BulkActions.DELETE, wait_to_complete)
 
-    def delete_by_external_id(self, records: list):
+    def delete_by_external_id(self, records: list, wait_to_complete: bool = False):
         """
         Deletes multiple records by external ID in bulk.
 
@@ -228,9 +228,9 @@ class Bulk:
             every will have to have a external_id.
         """
         self._validate("external_id", records)
-        return self.queryset.bulk(records, BulkActions.DELETE_BY_EXTERNAL_ID)
+        return self.queryset.bulk(records, BulkActions.DELETE_BY_EXTERNAL_ID, wait_to_complete)
 
-    def create_or_update_by_external_id(self, records: list):
+    def create_or_update_by_external_id(self, records: list, wait_to_complete: bool = True):
         """
         Creates or updates multiple records by external ID in bulk.
 
@@ -239,9 +239,13 @@ class Bulk:
             every will have to have a external_id.
         """
         self._validate("external_id", records)
-        return self.queryset.bulk(records, BulkActions.CREATE_OR_UPDATE_BY_EXTERNAL_ID)
+        return self.queryset.bulk(
+            records,
+            BulkActions.CREATE_OR_UPDATE_BY_EXTERNAL_ID,
+            wait_to_complete
+        )
 
-    def create_or_update_by_name(self, records: list):
+    def create_or_update_by_name(self, records: list, wait_to_complete: bool = True):
         """
         Creates or updates multiple records by name in bulk.
 
@@ -250,4 +254,4 @@ class Bulk:
             every will have to have a name.
         """
         self._validate("name", records)
-        return self.queryset.bulk(records, BulkActions.CREATE_OR_UPDATE_BY_NAME)
+        return self.queryset.bulk(records, BulkActions.CREATE_OR_UPDATE_BY_NAME, wait_to_complete)

@@ -1,10 +1,12 @@
 """
 For Manager and querysets to Records CustomObject
 """
+import time
 
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
+from mercuryorm.exceptions import BulkRecordsError
 
 
 class BulkActions(Enum):
@@ -222,7 +224,12 @@ class QuerySet:
         )
         return response["count"]["value"]
 
-    def bulk(self, records: dict, action: BulkActions):
+    def bulk(
+            self,
+            records: dict,
+            action: BulkActions,
+            wait_to_complete: bool = False
+        ):  # pylint: disable=too-many-locals
         """
         Create, update, delete records in bulk, using the Bulk API.
 
@@ -276,6 +283,26 @@ class QuerySet:
                 end = limit
             else:
                 end += 100
+
+        if wait_to_complete:
+            WAIT_TIMEOUT = 30  # pylint: disable=invalid-name
+            for response in responses:
+                status = response["job_status"]["status"]
+                url = response["job_status"]["url"].replace(ZendeskAPIClient.BASE_URL, "")
+                start_time = time.time()
+
+                while status != "completed":
+                    if time.time() - start_time > WAIT_TIMEOUT:
+                        raise BulkRecordsError(
+                            "Timeout exceeded while waiting for bulk operation to complete."
+                        )
+
+                    responses_status = self.client.get(url)
+                    status = responses_status["job_status"]["status"]
+                    response.update(responses_status)
+
+                    if status in ["failed", "aborted"]:
+                        break
 
         return responses
 

@@ -6,7 +6,7 @@ from mercuryorm.exceptions import BadRequestError, NotFoundError
 def test_create_record(record_manager, requests_mock):
     url = f"{record_manager.model.__name__.lower()}/records"
     requests_mock.post(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}",
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}",
         json={"custom_object_record": {"id": "123"}},
     )
 
@@ -23,7 +23,7 @@ def test_get_record_by_id(record_manager, requests_mock):
     url = f"{record_manager.model.__name__.lower()}/records/{record_id}"
     mock_response = {"custom_object_record": {"id": record_id, "name": "Test Record"}}
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
 
     record = record_manager.get(id=record_id)
@@ -35,7 +35,7 @@ def test_get_record_not_found(record_manager, requests_mock):
     record_id = "nonexistent"
     url = f"{record_manager.model.__name__.lower()}/records/{record_id}"
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", status_code=404
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", status_code=404
     )
 
     with pytest.raises(NotFoundError):
@@ -46,7 +46,7 @@ def test_get_bad_request(record_manager, requests_mock):
     record_id = "invalid"
     url = f"{record_manager.model.__name__.lower()}/records/{record_id}"
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}",
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}",
         status_code=400,
         json={"error": "Bad Request"},
     )
@@ -64,7 +64,7 @@ def test_filter_records(record_manager, requests_mock):
         ]
     }
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
 
     records = record_manager.filter(name="Record 1")
@@ -81,7 +81,7 @@ def test_get_last_record(record_manager, requests_mock):
         ]
     }
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
 
     last_record = record_manager.last()
@@ -93,7 +93,7 @@ def test_delete_record(record_manager, requests_mock):
     record_id = "123"
     url = f"{record_manager.model.__name__.lower()}/records/{record_id}"
     requests_mock.delete(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", status_code=204
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", status_code=204
     )
     response = record_manager.delete(record_id)
     assert response == {"status_code": 204}
@@ -102,7 +102,7 @@ def test_delete_record(record_manager, requests_mock):
 def test_no_records_found(record_manager, requests_mock):
     url = f"{record_manager.model.__name__.lower()}/records"
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}",
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}",
         json={"custom_object_records": []},
     )
 
@@ -119,7 +119,7 @@ def test_multiple_records_found(record_manager, requests_mock):
         ]
     }
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
 
     with pytest.raises(ValueError):
@@ -135,7 +135,7 @@ def test_get_all(record_manager, requests_mock):
         ]
     }
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
     all = record_manager.all()
     assert len(all) > 1
@@ -145,7 +145,7 @@ def test_get_last_none(record_manager, requests_mock):
     url = f"{record_manager.model.__name__.lower()}/records"
     mock_response = {}
     requests_mock.get(
-        f"{ZendeskAPIClient().base_url}/custom_objects/{url}", json=mock_response
+        f"{ZendeskAPIClient.BASE_URL}/custom_objects/{url}", json=mock_response
     )
     last = record_manager.last()
     assert last == None
