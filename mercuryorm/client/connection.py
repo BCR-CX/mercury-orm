@@ -17,6 +17,9 @@ class ZendeskAPIClient:
     """
     A client to interact with the Zendesk API, supporting basic CRUD operations.
     """
+    BASE_URL = (
+        f"https://{os.getenv('ZENDESK_SUBDOMAIN', 'mockdomain')}.zendesk.com/api/v2"
+    )
 
     def __init__(self, email=os.getenv("ZENDESK_EMAIL", "mock@mock.com")):
         """
@@ -28,9 +31,6 @@ class ZendeskAPIClient:
         """
         self.email = email
         self.api_token = os.getenv("ZENDESK_API_TOKEN", "mock_token")
-        self.base_url = (
-            f"https://{os.getenv('ZENDESK_SUBDOMAIN', 'mockdomain')}.zendesk.com/api/v2"
-        )
         self.headers = {"Content-Type": "application/json"}
         self.auth = HTTPBasicAuth(f"{self.email}/token", self.api_token)
         self.default_params = {"locale": "en"}
@@ -52,7 +52,7 @@ class ZendeskAPIClient:
         """
         params = {**self.default_params, **(params or {})}
         response = requests.get(
-            f"{self.base_url}{endpoint}",
+            f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             params=params,
             auth=self.auth,
@@ -84,7 +84,7 @@ class ZendeskAPIClient:
         """
         params = {**self.default_params, **(params or {})}
         response = requests.post(
-            f"{self.base_url}{endpoint}",
+            f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
             auth=self.auth,
@@ -119,7 +119,7 @@ class ZendeskAPIClient:
         """
         params = {**self.default_params, **(params or {})}
         response = requests.patch(
-            f"{self.base_url}{endpoint}",
+            f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
             auth=self.auth,
@@ -154,7 +154,7 @@ class ZendeskAPIClient:
         """
         params = {**self.default_params, **(params or {})}
         response = requests.put(
-            f"{self.base_url}{endpoint}",
+            f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
             auth=self.auth,
@@ -188,7 +188,7 @@ class ZendeskAPIClient:
         """
         params = {**self.default_params, **(params or {})}
         response = requests.delete(
-            f"{self.base_url}{endpoint}",
+            f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             auth=self.auth,
             timeout=timeout,
@@ -212,7 +212,7 @@ class ZendeskAPIClient:
         Uploads a file to Zendesk.
         """
         response = requests.post(
-            f"{self.base_url}/uploads",
+            f"{self.BASE_URL}/uploads",
             headers={"Content-Type": "application/binary"},
             data=content,
             auth=self.auth,

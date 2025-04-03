@@ -36,7 +36,7 @@ def test_all_records(queryset, requests_mock):
             },
         ]
     }
-    requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.get(f"{ZendeskAPIClient.BASE_URL}{url}", json=mock_response)
 
     records = queryset.all()
     assert len(records) == 2
@@ -45,7 +45,7 @@ def test_all_records(queryset, requests_mock):
 
 
 def test_all_with_pagination(queryset, requests_mock):
-    base_url = ZendeskAPIClient().base_url
+    base_url = ZendeskAPIClient.BASE_URL
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
     count_url = f"{base_url}{url}/count"
 
@@ -91,7 +91,7 @@ def test_filter_records(queryset, requests_mock):
             },
         ]
     }
-    requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.get(f"{ZendeskAPIClient.BASE_URL}{url}", json=mock_response)
 
     records = queryset.filter(field1="value1")
 
@@ -123,7 +123,7 @@ def test_parse_response(queryset):
 
 
 def test_all_with_pagination_after_cursor(queryset, requests_mock):
-    base_url = ZendeskAPIClient().base_url
+    base_url = ZendeskAPIClient.BASE_URL
     url = f"/custom_objects/{queryset.model.__name__.lower()}/records"
     count_url = f"{base_url}{url}/count"
 
@@ -140,7 +140,7 @@ def test_all_with_pagination_after_cursor(queryset, requests_mock):
         "meta": {"page_size": 1},
         "links": {"next": "next_url"},
     }
-    requests_mock.get(f"{ZendeskAPIClient().base_url}{url}", json=mock_response)
+    requests_mock.get(f"{ZendeskAPIClient.BASE_URL}{url}", json=mock_response)
 
     response = queryset.all_with_pagination(page_size=1, after_cursor="abc123")
 
