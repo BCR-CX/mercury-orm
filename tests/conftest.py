@@ -1,5 +1,5 @@
 import pytest
-import requests_mock
+import requests
 from unittest.mock import patch
 from mercuryorm.zendesk_manager import ZendeskObjectManager
 from mercuryorm.client.connection import ZendeskAPIClient
@@ -15,6 +15,7 @@ def zendesk_client(monkeypatch):
         client.auth = None
         client.headers = {"Content-Type": "application/json"}
         client.default_params = {"locale": "en"}
+        client.session = requests.Session()
         yield client
 
 
@@ -26,6 +27,7 @@ def zendesk_object_manager():
         manager.client.headers = {"Content-Type": "application/json"}
         manager.client.auth = None
         manager.client.default_params = {"locale": "en"}
+        manager.client.session = requests.Session()
         yield manager
 
 

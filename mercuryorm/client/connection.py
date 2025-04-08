@@ -7,6 +7,8 @@ import os
 import json
 import requests
 from requests.auth import HTTPBasicAuth
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv  # pylint: disable=import-error
 
 
@@ -15,11 +17,9 @@ load_dotenv()
 
 class ZendeskAPIClient:
     """
-    A client to interact with the Zendesk API, supporting basic CRUD operations.
+    A client to interact with the Zendesk API, supporting basic CRUD operations with retry logic.
     """
-    BASE_URL = (
-        f"https://{os.getenv('ZENDESK_SUBDOMAIN', 'mockdomain')}.zendesk.com/api/v2"
-    )
+    BASE_URL = f"https://{os.getenv('ZENDESK_SUBDOMAIN', 'mockdomain')}.zendesk.com/api/v2"
 
     def __init__(self, email=os.getenv("ZENDESK_EMAIL", "mock@mock.com")):
         """
@@ -34,6 +34,18 @@ class ZendeskAPIClient:
         self.headers = {"Content-Type": "application/json"}
         self.auth = HTTPBasicAuth(f"{self.email}/token", self.api_token)
         self.default_params = {"locale": "en"}
+
+        # Setup requests session with retry logic
+        self.session = requests.Session()
+        retries = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[404, 429, 500, 502, 503, 504],
+            allowed_methods=["GET", "POST", "PUT", "PATCH", "DELETE"]
+        )
+        adapter = HTTPAdapter(max_retries=retries)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
     def get(self, endpoint, params=None, timeout=10):
         """
@@ -51,7 +63,7 @@ class ZendeskAPIClient:
             requests.exceptions.HTTPError: If the request fails.
         """
         params = {**self.default_params, **(params or {})}
-        response = requests.get(
+        response = self.session.get(
             f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             params=params,
@@ -83,7 +95,7 @@ class ZendeskAPIClient:
             requests.exceptions.HTTPError: If the request fails.
         """
         params = {**self.default_params, **(params or {})}
-        response = requests.post(
+        response = self.session.post(
             f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
@@ -118,7 +130,7 @@ class ZendeskAPIClient:
             requests.exceptions.HTTPError: If the request fails.
         """
         params = {**self.default_params, **(params or {})}
-        response = requests.patch(
+        response = self.session.patch(
             f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
@@ -153,7 +165,7 @@ class ZendeskAPIClient:
             requests.exceptions.HTTPError: If the request fails.
         """
         params = {**self.default_params, **(params or {})}
-        response = requests.put(
+        response = self.session.put(
             f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             json=data,
@@ -187,7 +199,7 @@ class ZendeskAPIClient:
             requests.exceptions.HTTPError: If the request fails.
         """
         params = {**self.default_params, **(params or {})}
-        response = requests.delete(
+        response = self.session.delete(
             f"{self.BASE_URL}{endpoint}",
             headers=self.headers,
             auth=self.auth,
@@ -211,7 +223,7 @@ class ZendeskAPIClient:
         """
         Uploads a file to Zendesk.
         """
-        response = requests.post(
+        response = self.session.post(
             f"{self.BASE_URL}/uploads",
             headers={"Content-Type": "application/binary"},
             data=content,
