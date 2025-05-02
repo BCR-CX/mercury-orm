@@ -31,12 +31,20 @@ class FileManagerZendesk:
         return self._client.upload_file(filename, content)
 
     def send_to_ticket(
-        self, ticket_id: int, token: str, comment: str = "Anexo adicionado."
+        self,
+        ticket_id: int,
+        token: str,
+        comment: str = "Anexo adicionado.",
+        public: bool = True,
     ):
         """
         Sends the uploaded attachment to the given ticket.
         """
-        data = {"ticket": {"comment": {"body": comment, "uploads": [token]}}}
+        data = {
+            "ticket": {
+                "comment": {"body": comment, "uploads": [token], "public": public},
+            }
+        }
         return self._client.put(
             self.ENDPOINT_TICKET.format(ticket_id=ticket_id), data=data
         )
@@ -65,6 +73,7 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         content: Optional[bytes] = None,
         save_fast: Optional[bool] = False,
         file_manager: FileManagerZendesk = FileManagerZendesk,
+        public: bool = True,
     ):
         """
         Initialize an AttachmentFile instance.
@@ -77,6 +86,7 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         self.file_manager = file_manager
         self.zendesk_data = None
         self.saved = False
+        self.public = public
 
         if attachment_id:
             self.saved = True
@@ -148,12 +158,12 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         return response["upload"]
 
     def _send_attachment_to_ticket(
-        self, ticket_id: str, token: str, comment: str
+        self, ticket_id: str, token: str, comment: str, public: bool
     ) -> dict:
         """
         Sends the uploaded attachment to the given ticket.
         """
-        response = self.file_manager().send_to_ticket(ticket_id, token, comment)
+        response = self.file_manager().send_to_ticket(ticket_id, token, comment, public)
         return response
 
     def save(self) -> None:
@@ -177,4 +187,6 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         """
         if not self.saved:
             self.save()
-        return self._send_attachment_to_ticket(ticket_id, self.token, comment)
+        return self._send_attachment_to_ticket(
+            ticket_id, self.token, comment, self.public
+        )
