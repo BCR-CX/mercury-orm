@@ -5,6 +5,7 @@ handling requests to the Zendesk API.
 
 import os
 import json
+import logging
 import requests
 from requests.auth import HTTPBasicAuth
 from requests.adapters import HTTPAdapter
@@ -13,6 +14,8 @@ from dotenv import load_dotenv  # pylint: disable=import-error
 
 
 load_dotenv()
+
+logger = logging.getLogger("mercuryorm")
 
 
 class ZendeskAPIClient:
@@ -94,6 +97,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        logger.info(f"Sending POST {endpoint} | Data {data}") # pylint: disable=logging-fstring-interpolation
         params = {**self.default_params, **(params or {})}
         response = self.session.post(
             f"{self.BASE_URL}{endpoint}",
@@ -129,6 +133,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        logger.info(f"Sending PATCH {endpoint} | Data {data}") # pylint: disable=logging-fstring-interpolation
         params = {**self.default_params, **(params or {})}
         response = self.session.patch(
             f"{self.BASE_URL}{endpoint}",
@@ -164,6 +169,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        logger.info(f"Sending PUT {endpoint} | Data {data}") # pylint: disable=logging-fstring-interpolation
         params = {**self.default_params, **(params or {})}
         response = self.session.put(
             f"{self.BASE_URL}{endpoint}",
@@ -198,6 +204,7 @@ class ZendeskAPIClient:
         Raises:
             requests.exceptions.HTTPError: If the request fails.
         """
+        logger.info(f"Sending DELETE {endpoint}") # pylint: disable=logging-fstring-interpolation
         params = {**self.default_params, **(params or {})}
         response = self.session.delete(
             f"{self.BASE_URL}{endpoint}",
