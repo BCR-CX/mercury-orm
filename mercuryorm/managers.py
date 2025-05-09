@@ -229,7 +229,7 @@ class QuerySet:
             records: dict,
             action: BulkActions,
             wait_to_complete: bool = False
-        ):  # pylint: disable=too-many-locals
+        ):  # pylint: disable=too-many-locals, too-many-branches
         """
         Create, update, delete records in bulk, using the Bulk API.
 
@@ -287,8 +287,11 @@ class QuerySet:
         if wait_to_complete:
             WAIT_TIMEOUT = 30  # pylint: disable=invalid-name
             for response in responses:
-                status = response["job_status"]["status"]
-                url = response["job_status"]["url"].replace(ZendeskAPIClient.BASE_URL, "")
+                status = response.get("job_status", {}).get("status")
+                url = response.get("job_status", {}).get("url")
+                if not status or not url:
+                    continue
+                url = url.replace(ZendeskAPIClient.BASE_URL, "")
                 start_time = time.time()
 
                 while status != "completed":
