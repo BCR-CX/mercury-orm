@@ -1,12 +1,16 @@
 """
 For Manager and querysets to Records CustomObject
 """
+
+import logging
 import time
 
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 from mercuryorm.client.connection import ZendeskAPIClient
 from mercuryorm.exceptions import BulkRecordsError
+
+logger = logging.getLogger(__name__)
 
 
 class BulkActions(Enum):
@@ -225,11 +229,8 @@ class QuerySet:
         return response["count"]["value"]
 
     def bulk(
-            self,
-            records: dict,
-            action: BulkActions,
-            wait_to_complete: bool = False
-        ):  # pylint: disable=too-many-locals, too-many-branches
+        self, records: dict, action: BulkActions, wait_to_complete: bool = False
+    ):  # pylint: disable=too-many-locals, too-many-branches
         """
         Create, update, delete records in bulk, using the Bulk API.
 
@@ -244,7 +245,7 @@ class QuerySet:
         end = 100
         limit = len(records)
 
-        responses = []
+        responses: list[dict] = []
 
         while True:
             if action == BulkActions.DELETE:
@@ -289,9 +290,17 @@ class QuerySet:
             for response in responses:
                 status = response.get("job_status", {}).get("status")
                 url = response.get("job_status", {}).get("url")
-                if not status or not url:
-                    continue
-                url = url.replace(ZendeskAPIClient.BASE_URL, "")
+                if url:
+                    url = url.replace(ZendeskAPIClient.BASE_URL, "")
+                else:
+                    logger.error(
+                        "No URL found in the response. Cannot check job status. Response: %s",
+                        response,
+                    )
+                    raise BulkRecordsError(
+                        "No URL found in the response. Cannot check job status."
+                    )
+
                 start_time = time.time()
 
                 while status != "completed":
