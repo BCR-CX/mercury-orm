@@ -1,6 +1,7 @@
 """
 For Manager and querysets to Records CustomObject
 """
+
 import time
 
 from enum import Enum
@@ -225,11 +226,8 @@ class QuerySet:
         return response["count"]["value"]
 
     def bulk(
-            self,
-            records: dict,
-            action: BulkActions,
-            wait_to_complete: bool = False
-        ):  # pylint: disable=too-many-locals
+        self, records: list, action: BulkActions, wait_to_complete: bool = False
+    ):  # pylint: disable=too-many-locals, too-many-branches
         """
         Create, update, delete records in bulk, using the Bulk API.
 
@@ -239,6 +237,8 @@ class QuerySet:
         Returns:
             dict: Response from the API.
         """
+        if not records:
+            return []
 
         start = 0
         end = 100
@@ -288,7 +288,9 @@ class QuerySet:
             WAIT_TIMEOUT = 30  # pylint: disable=invalid-name
             for response in responses:
                 status = response["job_status"]["status"]
-                url = response["job_status"]["url"].replace(ZendeskAPIClient.BASE_URL, "")
+                url = response["job_status"]["url"].replace(
+                    ZendeskAPIClient.BASE_URL, ""
+                )
                 start_time = time.time()
 
                 while status != "completed":
