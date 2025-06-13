@@ -70,9 +70,10 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         attachment_url: Optional[str] = None,
         attachment_size: Optional[int] = None,
         attachment_filename: Optional[str] = None,
+        attachment_token: Optional[str] = None,
         content: Optional[bytes] = None,
         save_fast: Optional[bool] = False,
-        file_manager: FileManagerZendesk = FileManagerZendesk,
+        file_manager: type[FileManagerZendesk] = FileManagerZendesk,
         public: bool = True,
     ):
         """
@@ -83,6 +84,7 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         self._attachment_size = attachment_size
         self._attachment_filename = attachment_filename or str(uuid.uuid4())
         self._content = content
+        self._attachment_token = attachment_token
         self.file_manager = file_manager
         self.zendesk_data = None
         self.saved = False
@@ -96,6 +98,22 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
             if save_fast:
                 self.save()
 
+        if attachment_token:
+            if not (attachment_url or attachment_size):
+                if not attachment_id:
+                    raise ValueError("Attachment ID must be provided if token is set.")
+
+                attachment = self.file_manager().get_attachment_details(attachment_id)
+                self._attachment_filename = attachment.get("attachment", {}).get(
+                    "file_name"
+                )
+                self._attachment_url = attachment.get("attachment", {}).get(
+                    "content_url"
+                )
+                self._attachment_size = attachment.get("attachment", {}).get("size")
+
+            self.saved = True
+
     def __bool__(self) -> bool:
         return bool(self.id or self.content)
 
@@ -106,7 +124,7 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         return f"AttachmentFile(id={self.id}, filename={self.filename}, saved={self.saved})"
 
     @property
-    def content(self) -> bytes:
+    def content(self) -> Optional[bytes]:
         """
         Content of the file.
         """
@@ -120,6 +138,23 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         if not isinstance(value, bytes):
             raise ValueError("Content attribute must be of type bytes.")
         self._content = value
+        self.saved = False
+
+    @property
+    def token(self) -> Optional[str]:
+        """
+        Attachment token.
+        """
+        return self._attachment_token
+
+    @token.setter
+    def token(self, value: str) -> None:
+        """
+        Set the attachment token.
+        """
+        if not isinstance(value, str):
+            raise ValueError("Token must be a string.")
+        self._attachment_token = value
         self.saved = False
 
     @property
@@ -158,7 +193,7 @@ class AttachmentFile:  # pylint: disable=too-many-instance-attributes
         return response["upload"]
 
     def _send_attachment_to_ticket(
-        self, ticket_id: str, token: str, comment: str, public: bool
+        self, ticket_id: int, token: str, comment: str, public: bool
     ) -> dict:
         """
         Sends the uploaded attachment to the given ticket.
