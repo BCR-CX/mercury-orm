@@ -285,7 +285,7 @@ class QuerySet:
                 end += 100
 
         if wait_to_complete:
-            WAIT_TIMEOUT = 30  # pylint: disable=invalid-name
+            WAIT_TIMEOUT = 120  # pylint: disable=invalid-name
             for response in responses:
                 status = response["job_status"]["status"]
                 url = response["job_status"]["url"].replace(
