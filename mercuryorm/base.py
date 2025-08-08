@@ -70,18 +70,17 @@ class CustomObject:
         """
         Formats the current object to be sent to the API.
         """
-        return {
+        data = {
             "custom_object_record": {
                 "custom_object_fields": self.to_save(),
-                "name": (
-                    getattr(self, "name") or "Unnamed Object"
-                    if not self.is_namefield_autoincrement()
-                    else None
-                ),
                 "id": getattr(self, "id", None),
                 "external_id": getattr(self, "external_id", None),
             }
         }
+        if not self.is_namefield_autoincrement():
+            data["custom_object_record"]["name"] = getattr(self, "name", None)
+
+        return data
 
     def save(self):
         """
