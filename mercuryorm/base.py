@@ -78,7 +78,9 @@ class CustomObject:
             }
         }
         if not self.is_namefield_autoincrement():
-            data["custom_object_record"]["name"] = getattr(self, "name", None)
+            data["custom_object_record"]["name"] = (
+                getattr(self, "name", None) or "Unnamed Object"
+            )
 
         return data
 
